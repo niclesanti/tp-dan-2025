@@ -3,10 +3,12 @@ package edu.utn.frsf.isi.dan.user.dao;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Optional;
 
@@ -22,11 +24,11 @@ public class BancoRepositoryTest {
             .withUsername("testuser")
             .withPassword("testpass");
 
-    static {
-        mysqlContainer.start();
-        System.setProperty("DB_URL", mysqlContainer.getJdbcUrl());
-        System.setProperty("DB_USERNAME", mysqlContainer.getUsername());
-        System.setProperty("DB_PASSWORD", mysqlContainer.getPassword());
+    @DynamicPropertySource
+    static void configureDatasource(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysqlContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", mysqlContainer::getUsername);
+        registry.add("spring.datasource.password", mysqlContainer::getPassword);
     }
 
     @Autowired

@@ -62,9 +62,15 @@ public class UserControllerTest {
     @Test
     public void testCrearUsuarioPropietario() throws Exception {
         // Arrange
-        // Assuming CuentaBancariaRecord is a required field for PropietarioRecord
+        // PropietarioRecord parameters: nombre, email, telefono, idHotel, cuentaBancaria
         CuentaBancariaRecord cuentaBancariaRecord = new CuentaBancariaRecord("123456789", "BankName", "BranchName",1);
-        PropietarioRecord propietarioRecord = new PropietarioRecord("John", "Doe", "john.doe@example.com", 1234567890L, cuentaBancariaRecord);
+        PropietarioRecord propietarioRecord = new PropietarioRecord(
+            "John Doe",                    // nombre (min 5 caracteres)
+            "john.doe@example.com",        // email (formato email válido)
+            "1234567890",                  // telefono (notBlank)
+            1L,                            // idHotel
+            cuentaBancariaRecord           // cuentaBancaria
+        );
 
         // Act & Assert
         mockMvc.perform(post("/users/propietario")
