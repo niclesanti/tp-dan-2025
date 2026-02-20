@@ -1,6 +1,5 @@
 package edu.utn.frsf.isi.dan.user.model;
 
-import java.time.LocalDate;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;

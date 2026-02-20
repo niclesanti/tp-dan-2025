@@ -1,13 +1,13 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaRecord;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -39,43 +39,54 @@ public class UserControllerTest {
     @Test
     public void testCrearUsuarioHuesped() throws Exception {
         // Arrange
-        HuespedRecord huespedRecord = new HuespedRecord(
-            "Jane", 
-            "jane.smith@example.com", 
-            "9876543210", 
-            LocalDate.of(1990, 5, 15), 
-            "1234567890123456", 
-            "martin",
-            "12/25", 
-            "123", 
-            true, 
-            1
+        TarjetaCreditoDTORequest tarjetaCredito = new TarjetaCreditoDTORequest(
+            "1234567890123456",  // numero
+            "Jane Smith",        // nombreTitular
+            "12/25",             // fechaVencimiento
+            "123",               // cvc
+            true,                // esPrincipal
+            1                    // bancoId
+        );
+        
+        HuespedDTORequest huespedRequest = new HuespedDTORequest(
+            "Jane Smith",                    // nombre
+            "jane.smith@example.com",        // email
+            "9876543210",                    // telefono
+            "12345678",                      // dni
+            LocalDate.of(1990, 5, 15),       // fechaNacimiento
+            tarjetaCredito                    // tarjetaCredito
         );
 
         // Act & Assert
         mockMvc.perform(post("/users/huesped")
             .contentType("application/json")
-            .content(objectMapper.writeValueAsString(huespedRecord)))
+            .content(objectMapper.writeValueAsString(huespedRequest)))
             .andExpect(status().isCreated());
     }
 
     @Test
     public void testCrearUsuarioPropietario() throws Exception {
         // Arrange
-        // PropietarioRecord parameters: nombre, email, telefono, idHotel, cuentaBancaria
-        CuentaBancariaRecord cuentaBancariaRecord = new CuentaBancariaRecord("123456789", "BankName", "BranchName",1);
-        PropietarioRecord propietarioRecord = new PropietarioRecord(
-            "John Doe",                    // nombre (min 5 caracteres)
-            "john.doe@example.com",        // email (formato email válido)
-            "1234567890",                  // telefono (notBlank)
-            1L,                            // idHotel
-            cuentaBancariaRecord           // cuentaBancaria
+        CuentaBancariaDTORequest cuentaBancaria = new CuentaBancariaDTORequest(
+            "123456789",                          // numeroCuenta
+            "1234567890123456789012",             // cbu (22 dígitos)
+            "john.doe.cuenta",                    // alias
+            1                                     // bancoId
+        );
+        
+        PropietarioDTORequest propietarioRequest = new PropietarioDTORequest(
+            "John Doe",                           // nombre
+            "john.doe@example.com",               // email
+            "1234567890",                         // telefono
+            "12345678",                           // dni
+            cuentaBancaria,                       // cuentaBancaria
+            1L                                    // idHotel
         );
 
         // Act & Assert
         mockMvc.perform(post("/users/propietario")
                 .contentType("application/json")
-                .content(objectMapper.writeValueAsString(propietarioRecord)))
+                .content(objectMapper.writeValueAsString(propietarioRequest)))
                 .andExpect(status().isCreated());
     }
 }

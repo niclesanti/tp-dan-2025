@@ -4,16 +4,20 @@ import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
 import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
+import edu.utn.frsf.isi.dan.user.mapper.CuentaBancariaMapper;
+import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
+import edu.utn.frsf.isi.dan.user.mapper.PropietarioMapper;
+import edu.utn.frsf.isi.dan.user.mapper.TarjetaCreditoMapper;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
 import edu.utn.frsf.isi.dan.user.model.Usuario;
+import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,35 +26,34 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor  // Genera constructor con todos los campos final para inyección de dependencias
 public class UserService {
 
-    @Autowired
-    private BancoRepository bancoRepository;
+    private final BancoRepository bancoRepository;
+    private final CuentaBancariaRepository cuentaBancariaRepository;
+    private final TarjetaCreditoRepository tarjetaCreditoRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    @Autowired 
-    private CuentaBancariaRepository cuentaBancariaRepository;
+    private final HuespedMapper huespedMapper;
+    private final PropietarioMapper propietarioMapper;
+    private final CuentaBancariaMapper cuentaBancariaMapper;
+    private final TarjetaCreditoMapper tarjetaCreditoMapper;
 
-    @Autowired
-    private TarjetaCreditoRepository tarjetaCreditoRepository;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    public Huesped crearUsuarioHuesped(HuespedRecord huespedRecord) {
+    public Huesped crearUsuarioHuesped(HuespedDTORequest huespedRequest) {
         // Buscar el banco por ID
-        Optional<Banco> bancoOptional = bancoRepository.findById(huespedRecord.idBanco());
+        Optional<Banco> bancoOptional = bancoRepository.findById(huespedRequest.tarjetaCredito().bancoId());
         if (bancoOptional.isEmpty()) {
-            throw new IllegalArgumentException("Banco no encontrado con ID: " + huespedRecord.idBanco());
+            throw new IllegalArgumentException("Banco no encontrado con ID: " + huespedRequest.tarjetaCredito().bancoId());
         }
 
         Banco banco = bancoOptional.get();
 
         // Crear y guardar el usuario
-        Huesped usuario = huespedRecord.toHuesped();
+        Huesped usuario = huespedMapper.toEntity(huespedRequest);
         usuarioRepository.save(usuario);
 
         // Crear y guardar la tarjeta de crédito
-        TarjetaCredito tarjetaCredito = huespedRecord.toTarjetaCredito();
+        TarjetaCredito tarjetaCredito = tarjetaCreditoMapper.toEntity(huespedRequest.tarjetaCredito());
         tarjetaCredito.setHuesped(usuario);
         tarjetaCredito.setBanco(banco);
         TarjetaCredito tarjetaCreditoSaved =tarjetaCreditoRepository.save(tarjetaCredito);
@@ -61,17 +64,17 @@ public class UserService {
         return usuario;
     }
 
-    public void crearUsuarioPropietario(PropietarioRecord propietarioRecord) {
+    public void crearUsuarioPropietario(PropietarioDTORequest propietarioRequest) {
         // Buscar el banco por ID
-        Optional<Banco> bancoOptional = bancoRepository.findById(propietarioRecord.cuentaBancaria().idBanco());
+        Optional<Banco> bancoOptional = bancoRepository.findById(propietarioRequest.cuentaBancaria().bancoId());
         if (bancoOptional.isEmpty()) {
-            throw new IllegalArgumentException("Banco no encontrado con ID: " + propietarioRecord.cuentaBancaria().idBanco());
+            throw new IllegalArgumentException("Banco no encontrado con ID: " + propietarioRequest.cuentaBancaria().bancoId());
         }
 
         Banco banco = bancoOptional.get();
 
-        Propietario propietario = propietarioRecord.toPropietario();
-        CuentaBancaria cuentaBancaria = propietarioRecord.cuentaBancaria().toCuentaBancaria();
+        Propietario propietario = propietarioMapper.toEntity(propietarioRequest);
+        CuentaBancaria cuentaBancaria = cuentaBancariaMapper.toEntity(propietarioRequest.cuentaBancaria());
         cuentaBancaria.setBanco(banco);
         propietario.setCuentaBancaria(cuentaBancariaRepository.save(cuentaBancaria));
         usuarioRepository.save(propietario);
