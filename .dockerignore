@@ -1,0 +1,62 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║ .dockerignore para build desde raíz del proyecto                  ║
+# ║                                                                    ║
+# ║ Optimiza el contexto de build de Docker excluyendo archivos       ║
+# ║ innecesarios para acelerar el proceso                             ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+*.iml
+*.swp
+*.swo
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Docker
+**/Dockerfile
+**/.dockerignore
+docker-compose*.yml
+.env*
+
+# Maven (excepto wrapper necesario)
+**/target/
+!services/*/target/*.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# Tests
+**/src/test/
+**/test-results/
+
+# Logs
+**/logs/
+*.log
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Infraestructura (no necesaria en build de servicios)
+infra/
+
+# Otros servicios (cuando se construye uno específico)
+# Se excluyen en runtime, no en build time ya que necesitamos el pom padre

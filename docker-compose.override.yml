@@ -1,0 +1,63 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║ Docker Compose Override - Development Configuration               ║
+# ║                                                                    ║
+# ║ Este archivo se aplica automáticamente en desarrollo cuando       ║
+# ║ ejecutas: docker compose up -d --build                             ║
+# ║                                                                    ║
+# ║ Características de desarrollo:                                    ║
+# ║ - Puertos expuestos para acceso directo                            ║
+# ║ - Logs verbosos                                                    ║
+# ║ - Hot reload habilitado                                            ║
+# ║ - Sin límites de recursos                                          ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+services:
+  
+  # ── MySQL (Development) ─────────────────────────────────────────
+  mysql:
+    ports:
+      - "3306:3306"  # Exponer para conexión directa desde IDE
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --log-error-verbosity=3  # Logs verbosos
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── PHPMyAdmin (Development) ────────────────────────────────────
+  phpmyadmin:
+    ports:
+      - "6080:80"  # Acceso web: http://localhost:6080
+    environment:
+      UPLOAD_LIMIT: 300M
+      MEMORY_LIMIT: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ── User Service (Development) ──────────────────────────────────
+  user-svc:
+    ports:
+      - "8081:8080"  # API REST: http://localhost:8081
+      - "5005:5005"  # Puerto para debug remoto
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      # Habilitar debugging remoto
+      JAVA_TOOL_OPTIONS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+        -Xdebug
+    volumes:
+      # Código fuente montado para hot reload (opcional)
+      # - ./services/user-svc/src:/app/src:ro
+      - ./services/user-svc/logs:/app/logs  # Logs persistentes
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
