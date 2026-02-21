@@ -2,9 +2,11 @@ package edu.utn.frsf.isi.dan.user.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 
@@ -40,4 +42,16 @@ public interface HuespedMapper {
      * @return HuespedDTOResponse
      */
     HuespedDTOResponse toResponse(Huesped entity);
+    
+    /**
+     * Actualiza una entidad Huesped existente con los datos del DTO de actualización.
+     * Solo actualiza los campos permitidos: nombre, email, telefono, dni y fechaNacimiento.
+     * Las tarjetas de crédito no se modifican.
+     * 
+     * @param dto HuespedDTOUpdate con los nuevos datos
+     * @param huesped Entidad existente a actualizar
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tarjetaCredito", ignore = true)
+    void updateEntity(HuespedDTOUpdate dto, @MappingTarget Huesped huesped);
 }
