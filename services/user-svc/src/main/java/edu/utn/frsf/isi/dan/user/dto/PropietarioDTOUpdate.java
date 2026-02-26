@@ -1,6 +1,5 @@
 package edu.utn.frsf.isi.dan.user.dto;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,8 +7,13 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
-public record PropietarioDTORequest(
-        // Atributos de Usuario
+/**
+ * DTO para actualizar datos de un Propietario.
+ * Solo permite actualizar datos de Usuario e idHotel.
+ * La cuenta bancaria no se actualiza mediante este DTO.
+ */
+
+public record PropietarioDTOUpdate (
         @NotBlank(message = "El nombre es obligatorio")
         @Size(min = 2, max = 255, message = "El nombre debe tener entre 2 y 255 caracteres")
         String nombre,
@@ -28,12 +32,6 @@ public record PropietarioDTORequest(
         @Pattern(regexp = "^\\d{7,8}$", message = "El DNI debe tener 7 u 8 dígitos")
         String dni,
 
-        // Atributos específicos de Propietario
-        @NotNull(message = "La cuenta bancaria es obligatoria")
-        @Valid
-        CuentaBancariaDTORequest cuentaBancaria,
-
-        //@NotNull(message = "El ID del hotel es obligatorio")
         @Positive(message = "El ID del hotel debe ser un número positivo")
         Long idHotel
 ) {
