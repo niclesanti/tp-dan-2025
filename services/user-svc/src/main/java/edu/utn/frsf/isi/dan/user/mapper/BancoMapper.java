@@ -1,9 +1,12 @@
 package edu.utn.frsf.isi.dan.user.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import edu.utn.frsf.isi.dan.user.dto.BancoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.BancoDTOUpdate;
 import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 
@@ -23,6 +26,7 @@ public interface BancoMapper {
      * @param dto BancoDTORequest
      * @return Banco entity
      */
+    @Mapping(target = "id", ignore = true)
     Banco toEntity(BancoDTORequest dto);
     
     /**
@@ -32,4 +36,14 @@ public interface BancoMapper {
      * @return BancoDTOResponse
      */
     BancoDTOResponse toResponse(Banco entity);
+
+    /**
+     * Actualiza una entidad Banco existente con los datos del DTO de actualización.
+     *
+     * @param dto    BancoDTOUpdate con los nuevos datos
+     * @param banco  Entidad existente a actualizar
+     */
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(BancoDTOUpdate dto, @MappingTarget Banco banco);
+
 }
