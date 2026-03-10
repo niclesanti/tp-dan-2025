@@ -7,7 +7,7 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
-import edu.utn.frsf.isi.dan.user.model.Usuario;
+import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 public interface UserService {
 
@@ -19,9 +19,9 @@ public interface UserService {
 
     public void createUsuarioPropietario(PropietarioDTORequest propietarioRequest);
 
-    public Page<Usuario> buscarPorNombre(String nombre, Pageable pageable);
+    public Page<UsuarioDTOResponse> buscarPorNombre(String nombre, Pageable pageable);
 
-    public Page<Usuario> buscarPorDni(String dni, Pageable pageable);
+    public Page<UsuarioDTOResponse> buscarPorDni(String dni, Pageable pageable);
 
-    public Usuario buscarPorDniExacto(String dni);
+    public UsuarioDTOResponse buscarPorDniExacto(String dni);
 }

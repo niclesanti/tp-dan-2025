@@ -11,7 +11,7 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
-import edu.utn.frsf.isi.dan.user.model.Usuario;
+import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 
 @Tag(name = "User Controller", description = "Operaciones para la gestión de usuarios")
 @RestController
@@ -97,26 +98,24 @@ public class UserController {
     }
 
     @Operation(summary = "Buscar usuarios por nombre", 
-                description = "Busca usuarios cuyo nombre contenga el texto proporcionado",
+                description = "Busca usuarios cuyo nombre contenga el texto proporcionado. Si no se indica nombre, devuelve todos los usuarios.",
                 responses = {
                     @ApiResponse(responseCode = "200", description = "Usuarios encontrados"),
                     @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
     @GetMapping("/buscar-nombre")
-    public Page<Usuario> buscarUsuariosPorNombre(
-        @RequestParam(required = false) String nombre, 
-        @NotNull(message = "El parámetro pageable no puede ser nulo")
-        Pageable pageable) {
+    public ResponseEntity<Page<UsuarioDTOResponse>> buscarUsuariosPorNombre(
+        @RequestParam(required = false, defaultValue = "") String nombre,
+        @ParameterObject Pageable pageable) {
 
-        if (nombre == null || nombre.isEmpty()) {
-            return userService.buscarPorNombre("", pageable);
-        }
-        return userService.buscarPorNombre(nombre, pageable);
+        Page<UsuarioDTOResponse> usuarios = userService.buscarPorNombre(nombre, pageable);
+
+        return ResponseEntity.ok(usuarios);
     }
 
-    @Operation(summary = "Buscar usuario por dni", 
-                description = "Busca un usuario cuyo dni coincida exactamente con el texto proporcionado",
+    @Operation(summary = "Buscar usuario por DNI exacto", 
+                description = "Busca un usuario cuyo DNI coincida exactamente con el valor proporcionado",
                 responses = {
                     @ApiResponse(responseCode = "200", description = "Usuario encontrado"),
                     @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
@@ -124,29 +123,27 @@ public class UserController {
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
     @GetMapping("/dni/{dni}")
-    public ResponseEntity<Usuario> buscarUsuarioPorDni(
-        @PathVariable 
-        @NotNull(message = "El dni no puede ser nulo") String dni) {
+    public ResponseEntity<UsuarioDTOResponse> buscarUsuarioPorDni(
+        @PathVariable
+        @NotNull(message = "El DNI no puede ser nulo") String dni) {
         
-        Usuario usuario = userService.buscarPorDniExacto(dni);
-        if (usuario == null) return ResponseEntity.notFound().build();
+        UsuarioDTOResponse usuario = userService.buscarPorDniExacto(dni);
+
         return ResponseEntity.ok(usuario);
     }
 
-    
-    @Operation(summary = "Buscar usuarios por dni", 
-                description = "Busca usuarios cuyo dni contenga el texto proporcionado",
+    @Operation(summary = "Buscar usuarios por DNI (parcial)", 
+                description = "Busca usuarios cuyo DNI contenga el texto proporcionado. Si no se indica dni, devuelve todos los usuarios.",
                 responses = {
                     @ApiResponse(responseCode = "200", description = "Usuarios encontrados"),
                     @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
     @GetMapping("/buscar-dni")
-    public Page<Usuario> buscarUsuariosPorDni(
-        @RequestParam
-        @NotNull(message = "El dni no puede ser nulo") String dni,
-        @NotNull(message = "El parámetro pageable no puede ser nulo") Pageable pageable) {
+    public ResponseEntity<Page<UsuarioDTOResponse>> buscarUsuariosPorDni(
+        @RequestParam(required = false, defaultValue = "") String dni,
+        @ParameterObject Pageable pageable) {
 
-        return userService.buscarPorDni(dni, pageable);
+        return ResponseEntity.ok(userService.buscarPorDni(dni, pageable));
     }
 }
