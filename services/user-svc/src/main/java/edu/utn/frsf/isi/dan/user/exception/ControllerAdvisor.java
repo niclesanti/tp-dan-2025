@@ -8,6 +8,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @RestControllerAdvice
 public class ControllerAdvisor {
@@ -65,6 +66,22 @@ public class ControllerAdvisor {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .reduce((message1, message2) -> message1 + ", " + message2)
+                .orElse("Validation error");
+
+        ExceptionInfo exceptionInfo = new ExceptionInfo(
+                errorMessage,
+                request.getDescription(false),
+                String.valueOf(System.currentTimeMillis()),
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return new ResponseEntity<>(exceptionInfo, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ExceptionInfo> handleHandlerMethodValidationException(HandlerMethodValidationException ex, WebRequest request) {
+        String errorMessage = ex.getAllErrors().stream()
+                .map(error -> error.getDefaultMessage())
+                .reduce((m1, m2) -> m1 + ", " + m2)
                 .orElse("Validation error");
 
         ExceptionInfo exceptionInfo = new ExceptionInfo(
