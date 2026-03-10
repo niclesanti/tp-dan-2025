@@ -10,6 +10,7 @@ import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
 import edu.utn.frsf.isi.dan.user.model.Usuario;
+import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 public interface UserService {
 
@@ -22,9 +23,9 @@ public interface UserService {
     public PropietarioDTOResponse createUsuarioPropietario(PropietarioDTORequest propietarioRequest);
     public PropietarioDTOResponse updateUsuarioPropietario(Integer id, PropietarioDTOUpdate propietarioUpdate);
     public void deleteUsuarioPropietario(Integer id);
-
-    // Búsqueda de usuarios
-    public Page<Usuario> buscarPorNombre(String nombre, Pageable pageable);
-    public Page<Usuario> buscarPorDni(String dni, Pageable pageable);
-    public Usuario buscarPorDniExacto(String dni);
+    
+    // Búsqueda usuarios
+    public Page<UsuarioDTOResponse> buscarPorNombre(String nombre, Pageable pageable);
+    public Page<UsuarioDTOResponse> buscarPorDni(String dni, Pageable pageable);
+    public UsuarioDTOResponse buscarPorDniExacto(String dni);
 }

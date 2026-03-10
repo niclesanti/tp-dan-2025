@@ -11,16 +11,17 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
+import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.mapper.CuentaBancariaMapper;
 import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
 import edu.utn.frsf.isi.dan.user.mapper.PropietarioMapper;
 import edu.utn.frsf.isi.dan.user.mapper.TarjetaCreditoMapper;
+import edu.utn.frsf.isi.dan.user.mapper.UsuarioMapper;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
-import edu.utn.frsf.isi.dan.user.model.Usuario;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class UserServiceImpl implements UserService {
     private final PropietarioMapper propietarioMapper;
     private final CuentaBancariaMapper cuentaBancariaMapper;
     private final TarjetaCreditoMapper tarjetaCreditoMapper;
+    private final UsuarioMapper usuarioMapper;
 
 
     /*
@@ -262,21 +264,63 @@ public class UserServiceImpl implements UserService {
     }
 
 
+     * Busca usuarios cuyo nombre contenga el texto proporcionado (búsqueda parcial, insensible a mayúsculas).
+     * Si el nombre está vacío, devuelve todos los usuarios paginados.
+     *
+     * @param nombre texto parcial a buscar en el campo nombre
+     * @param pageable parámetros de paginación y orden
+     * @return página de {@link UsuarioDTOResponse} que coinciden con el criterio
+     */
     @Transactional(readOnly = true)
     @Override
-    public Page<Usuario> buscarPorNombre(String nombre, Pageable pageable) {
-        return usuarioRepository.findByNombreContainingIgnoreCase(nombre, pageable);
+    public Page<UsuarioDTOResponse> buscarPorNombre(String nombre, Pageable pageable) {
+        log.info("Buscando usuarios por nombre con criterio: '{}'", nombre);
+        // Delega al repositorio la búsqueda parcial case-insensitive; mapea cada entidad al DTO de respuesta
+        var resultado = usuarioRepository.findByNombreContainingIgnoreCase(nombre, pageable)
+                .map(usuarioMapper::toResponse);
+        log.info("Búsqueda por nombre '{}' retornó {} resultados en página {}/{}",
+                nombre, resultado.getNumberOfElements(), resultado.getNumber() + 1, resultado.getTotalPages());
+        return resultado;
     }
 
+    /**
+     * Busca usuarios cuyo DNI contenga el texto proporcionado (búsqueda parcial).
+     * Si el DNI está vacío, devuelve todos los usuarios paginados.
+     *
+     * @param dni texto parcial a buscar en el campo dni
+     * @param pageable parámetros de paginación y orden
+     * @return página de {@link UsuarioDTOResponse} que coinciden con el criterio
+     */
     @Transactional(readOnly = true)
     @Override
-    public Page<Usuario> buscarPorDni(String dni, Pageable pageable) {
-        return usuarioRepository.findByDniContaining(dni, pageable);
+    public Page<UsuarioDTOResponse> buscarPorDni(String dni, Pageable pageable) {
+        log.info("Buscando usuarios por DNI con criterio: '{}'", dni);
+        // Delega al repositorio la búsqueda parcial; mapea cada entidad al DTO de respuesta
+        var resultado = usuarioRepository.findByDniContaining(dni, pageable)
+                .map(usuarioMapper::toResponse);
+        log.info("Búsqueda por DNI '{}' retornó {} resultados en página {}/{}",
+                dni, resultado.getNumberOfElements(), resultado.getNumber() + 1, resultado.getTotalPages());
+        return resultado;
     }
 
+    /**
+     * Busca un usuario cuyo DNI coincida exactamente con el valor proporcionado.
+     *
+     * @param dni DNI exacto a buscar
+     * @return {@link UsuarioDTOResponse} del usuario encontrado
+     * @throws EntityNotFoundException si no existe ningún usuario con ese DNI
+     */
     @Transactional(readOnly = true)
     @Override
-    public Usuario buscarPorDniExacto(String dni) {
-        return usuarioRepository.findByDni(dni);
+    public UsuarioDTOResponse buscarPorDniExacto(String dni) {
+        log.info("Buscando usuario con DNI exacto: '{}'", dni);
+        // Lanza EntityNotFoundException directamente si el DNI no corresponde a ningún usuario registrado
+        var usuario = usuarioRepository.findByDni(dni)
+                .orElseThrow(() -> {
+                    log.warn("Usuario no encontrado con DNI: '{}'", dni);
+                    return new EntityNotFoundException("Usuario no encontrado con DNI: " + dni);
+                });
+        log.info("Usuario encontrado con DNI '{}': id={}, tipo={}", dni, usuario.getId(), usuario.getClass().getSimpleName());
+        return usuarioMapper.toResponse(usuario);
     }
 }
