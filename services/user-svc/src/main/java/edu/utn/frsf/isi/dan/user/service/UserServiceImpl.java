@@ -3,11 +3,14 @@ package edu.utn.frsf.isi.dan.user.service;
 import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
 import edu.utn.frsf.isi.dan.user.dao.HuespedRepository;
+import edu.utn.frsf.isi.dan.user.dao.PropietarioRepository;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.mapper.CuentaBancariaMapper;
 import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
@@ -29,7 +32,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -40,12 +42,14 @@ public class UserServiceImpl implements UserService {
     private final CuentaBancariaRepository cuentaBancariaRepository;
     private final UsuarioRepository usuarioRepository;
     private final HuespedRepository huespedRepository;
+    private final PropietarioRepository propietarioRepository;
 
     private final HuespedMapper huespedMapper;
     private final PropietarioMapper propietarioMapper;
     private final CuentaBancariaMapper cuentaBancariaMapper;
     private final TarjetaCreditoMapper tarjetaCreditoMapper;
     private final UsuarioMapper usuarioMapper;
+
 
     /*
     ----------------------------
@@ -164,25 +168,102 @@ public class UserServiceImpl implements UserService {
     --------------------------------
     */
 
+    /**
+    * Crea un nuevo usuario de tipo propietario.
+    * La cuenta bancaria e idHotel son opcionales al momento de la creación.
+    * Si se proporciona cuenta bancaria, se valida que el banco exista.
+    *
+    * @param propietarioRequest DTO con los datos del nuevo propietario
+    * @return DTO de respuesta con los datos del propietario creado
+    * @throws EntityNotFoundException si se especifica un banco que no existe
+    */
     @Transactional
     @Override
-    public void createUsuarioPropietario(PropietarioDTORequest propietarioRequest) {
-        // Buscar el banco por ID
-        Optional<Banco> bancoOptional = bancoRepository.findById(propietarioRequest.cuentaBancaria().bancoId());
-        if (bancoOptional.isEmpty()) {
-            throw new IllegalArgumentException("Banco no encontrado con ID: " + propietarioRequest.cuentaBancaria().bancoId());
-        }
+    public PropietarioDTOResponse createUsuarioPropietario(PropietarioDTORequest propietarioRequest) {
 
-        Banco banco = bancoOptional.get();
+        log.info("Creando usuario propietario con datos: {}", propietarioRequest);
 
         Propietario propietario = propietarioMapper.toEntity(propietarioRequest);
+        
+        Banco banco = bancoRepository.findById(propietarioRequest.cuentaBancaria().bancoId())
+                    .orElseThrow(() -> {
+                        String errorMessage = "Banco no encontrado con ID: " + propietarioRequest.cuentaBancaria().bancoId();
+                        log.error(errorMessage);
+                        return new EntityNotFoundException(errorMessage);
+                    });
+
         CuentaBancaria cuentaBancaria = cuentaBancariaMapper.toEntity(propietarioRequest.cuentaBancaria());
         cuentaBancaria.setBanco(banco);
+        cuentaBancaria.setPropietario(propietario);
         propietario.setCuentaBancaria(cuentaBancariaRepository.save(cuentaBancaria));
-        usuarioRepository.save(propietario);
+        
+
+        Propietario propietarioGuardado = propietarioRepository.save(propietario);
+
+        log.info("Usuario propietario creado exitosamente con ID: {}", propietarioGuardado.getId());
+
+        return propietarioMapper.toResponse(propietarioGuardado);
+    }
+
+        
+    /**
+     * Actualiza los datos de un usuario propietario existente.
+     * Solo se pueden actualizar los campos de Usuario e idHotel.
+    * La cuenta bancaria no se actualiza mediante este método.
+    *
+    * @param id ID del propietario a actualizar
+    * @param propietarioUpdate DTO con los nuevos datos del propietario
+    * @return DTO de respuesta con los datos del propietario actualizado
+    * @throws EntityNotFoundException si no se encuentra un propietario con el ID especificado
+    */
+    @Transactional
+    @Override
+    public PropietarioDTOResponse updateUsuarioPropietario(Integer id, PropietarioDTOUpdate propietarioUpdate) {
+        log.info("Actualizando usuario propietario con ID: {}", id);
+
+        // Buscar el propietario existente
+        Propietario propietario = propietarioRepository.findById(id)
+                .orElseThrow(() -> {
+                    String errorMessage = "Propietario no encontrado con ID: " + id;
+                    log.error(errorMessage);
+                    return new EntityNotFoundException(errorMessage);
+                });
+
+        propietarioMapper.updateEntity(propietarioUpdate, propietario);
+
+        Propietario propietarioActualizado = propietarioRepository.save(propietario);
+
+        log.info("Usuario propietario actualizado exitosamente con ID: {}", propietarioActualizado.getId());
+
+        return propietarioMapper.toResponse(propietarioActualizado);
+
     }
     
     /**
+    * Elimina un usuario propietario del sistema.
+    *
+    * @param id ID del propietario a eliminar
+    * @throws EntityNotFoundException si no se encuentra un propietario con el ID especificado
+    */
+    @Transactional
+    @Override
+    public void deleteUsuarioPropietario(Integer id) {
+
+        log.info("Eliminando usuario propietario con ID: {}", id);
+
+        Propietario propietario = propietarioRepository.findById(id)
+                .orElseThrow(() -> {
+                    String errorMessage = "Propietario no encontrado con ID: " + id;
+                    log.error(errorMessage);
+                    return new EntityNotFoundException(errorMessage);
+                });
+
+        propietarioRepository.delete(propietario);
+
+        log.info("Usuario propietario eliminado exitosamente con ID: {}", id);
+    }
+
+
      * Busca usuarios cuyo nombre contenga el texto proporcionado (búsqueda parcial, insensible a mayúsculas).
      * Si el nombre está vacío, devuelve todos los usuarios paginados.
      *

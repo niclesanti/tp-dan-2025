@@ -45,6 +45,21 @@ public class ControllerAdvisor {
         return new ResponseEntity<>(exceptionInfo, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    /**
+     * Maneja TarjetaPrincipalException → 422 UNPROCESSABLE_ENTITY
+     * Se lanza cuando se intenta eliminar la tarjeta principal de un huésped.
+     */
+    @ExceptionHandler(TarjetaPrincipalException.class)
+    public ResponseEntity<ExceptionInfo> handleTarjetaPrincipalException(TarjetaPrincipalException ex, WebRequest request) {
+        ExceptionInfo exceptionInfo = new ExceptionInfo(
+                ex.getMessage(),
+                request.getDescription(false),
+                String.valueOf(System.currentTimeMillis()),
+                HttpStatus.UNPROCESSABLE_ENTITY.value()
+        );
+        return new ResponseEntity<>(exceptionInfo, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ExceptionInfo> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()

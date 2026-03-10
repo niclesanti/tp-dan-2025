@@ -11,6 +11,8 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +31,7 @@ public class UserController {
 
     private final UserService userService;
 
+    // Gestión de huespedes
     @Operation(summary = "Crear usuario huesped", 
                 description = "Crea un nuevo usuario de tipo huesped",
                 responses = {
@@ -80,23 +83,65 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @Operation(summary = "Crear usuario propietario", 
-                description = "Crea un nuevo usuario de tipo propietario",
+
+    // Gestión de propietarios
+    @Operation(summary = "Crear usuario propietario",
+                description = "Crea un nuevo usuario de tipo propietario. La cuenta bancaria e idHotel son opcionales.",
                 responses = {
                     @ApiResponse(responseCode = "201", description = "Usuario propietario creado exitosamente"),
                     @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+                    @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
     @PostMapping("/propietario")
-    public ResponseEntity<Void> crearUsuarioPropietario(
+    public ResponseEntity<PropietarioDTOResponse> crearUsuarioPropietario(
         @Valid
         @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
         @RequestBody PropietarioDTORequest request) {
-        
-        userService.createUsuarioPropietario(request);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+
+        PropietarioDTOResponse response = userService.createUsuarioPropietario(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    
+    @Operation(summary = "Actualizar usuario propietario",
+                description = "Actualiza los datos de un usuario propietario existente (nombre, email, telefono, dni, idHotel). La cuenta bancaria no se modifica.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Usuario propietario actualizado exitosamente"),
+                    @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+                    @ApiResponse(responseCode = "404", description = "Usuario propietario no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @PutMapping("/propietario/{id}")
+    public ResponseEntity<PropietarioDTOResponse> actualizarUsuarioPropietario(
+        @PathVariable
+        @NotNull(message = "El ID no puede ser nulo") Integer id,
+        @Valid
+        @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
+        @RequestBody PropietarioDTOUpdate request) {
+
+        PropietarioDTOResponse response = userService.updateUsuarioPropietario(id, request);
+        return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Eliminar usuario propietario",
+                description = "Elimina un usuario propietario del sistema.",
+                responses = {
+                    @ApiResponse(responseCode = "204", description = "Usuario propietario eliminado exitosamente"),
+                    @ApiResponse(responseCode = "404", description = "Usuario propietario no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @DeleteMapping("/propietario/{id}")
+    public ResponseEntity<Void> eliminarUsuarioPropietario(
+        @PathVariable
+        @NotNull(message = "El ID no puede ser nulo") Integer id) {
+
+        userService.deleteUsuarioPropietario(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+
+
+    //Busquedas
     @Operation(summary = "Buscar usuarios por nombre", 
                 description = "Busca usuarios cuyo nombre contenga el texto proporcionado. Si no se indica nombre, devuelve todos los usuarios.",
                 responses = {
