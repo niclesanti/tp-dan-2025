@@ -3,6 +3,7 @@ package edu.utn.frsf.isi.dan.user.controller;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,8 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -190,5 +193,75 @@ public class UserController {
         @ParameterObject Pageable pageable) {
 
         return ResponseEntity.ok(userService.buscarPorDni(dni, pageable));
+    }
+
+    // ======================================================
+    // ENDPOINTS DE TARJETAS DE CRÉDITO → /huespedes/{id}/tarjetas
+    // ======================================================
+
+    @Operation(summary = "Agregar tarjeta de crédito",
+                description = "Agrega una nueva tarjeta de crédito a un huésped. Si es principal, desmarca la anterior.",
+                responses = {
+                    @ApiResponse(responseCode = "201", description = "Tarjeta agregada exitosamente"),
+                    @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+                    @ApiResponse(responseCode = "404", description = "Huésped o banco no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @PostMapping("/huespedes/{huespedId}/tarjetas")
+    public ResponseEntity<TarjetaCreditoDTOResponse> agregarTarjeta(
+        @PathVariable @NotNull(message = "El ID del huésped no puede ser nulo") Integer huespedId,
+        @Valid @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
+        @RequestBody TarjetaCreditoDTORequest request) {
+
+        return new ResponseEntity<>(userService.agregarTarjeta(huespedId, request), HttpStatus.CREATED);
+    }
+
+
+    @Operation(summary = "Eliminar tarjeta de crédito",
+                description = "Elimina una tarjeta de crédito si no es la principal.",
+                responses = {
+                    @ApiResponse(responseCode = "204", description = "Tarjeta eliminada exitosamente"),
+                    @ApiResponse(responseCode = "400", description = "No se puede eliminar la tarjeta principal"),
+                    @ApiResponse(responseCode = "404", description = "Huésped o tarjeta no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @DeleteMapping("/huespedes/{huespedId}/tarjetas/{tarjetaId}")
+    public ResponseEntity<Void> eliminarTarjeta(
+        @PathVariable @NotNull(message = "El ID del huésped no puede ser nulo") Integer huespedId,
+        @PathVariable @NotNull(message = "El ID de la tarjeta no puede ser nulo") Integer tarjetaId) {
+
+        userService.eliminarTarjeta(huespedId, tarjetaId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @Operation(summary = "Cambiar tarjeta principal",
+                description = "Cambia la tarjeta de crédito principal de un huésped. Desmarca la anterior.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Tarjeta principal cambiada exitosamente"),
+                    @ApiResponse(responseCode = "400", description = "La tarjeta ya es principal o no pertenece al huésped"),
+                    @ApiResponse(responseCode = "404", description = "Huésped o tarjeta no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @PatchMapping("/huespedes/{huespedId}/tarjetas/{tarjetaId}/principal")
+    public ResponseEntity<TarjetaCreditoDTOResponse> cambiarTarjetaPrincipal(
+        @PathVariable @NotNull(message = "El ID del huésped no puede ser nulo") Integer huespedId,
+        @PathVariable @NotNull(message = "El ID de la tarjeta no puede ser nulo") Integer tarjetaId) {
+
+        return ResponseEntity.ok(userService.cambiarTarjetaPrincipal(huespedId, tarjetaId));
+    }
+
+    @Operation(summary = "Listar tarjetas de crédito",
+                description = "Retorna la lista de todas las tarjetas de crédito de un huésped.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de tarjetas"),
+                    @ApiResponse(responseCode = "404", description = "Huésped no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @GetMapping("/huespedes/{huespedId}/tarjetas")
+    public ResponseEntity<Page<TarjetaCreditoDTOResponse>> listarTarjetas(
+        @PathVariable @NotNull(message = "El ID del huésped no puede ser nulo") Integer huespedId,
+        @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+
+        return ResponseEntity.ok(userService.listarTarjetas(huespedId, pageable));
     }
 }

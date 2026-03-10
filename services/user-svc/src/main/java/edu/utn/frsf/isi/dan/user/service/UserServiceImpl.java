@@ -4,6 +4,7 @@ import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
 import edu.utn.frsf.isi.dan.user.dao.HuespedRepository;
 import edu.utn.frsf.isi.dan.user.dao.PropietarioRepository;
+import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
@@ -11,7 +12,10 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
+import edu.utn.frsf.isi.dan.user.exception.TarjetaPrincipalException;
 import edu.utn.frsf.isi.dan.user.mapper.CuentaBancariaMapper;
 import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
 import edu.utn.frsf.isi.dan.user.mapper.PropietarioMapper;
@@ -43,6 +47,7 @@ public class UserServiceImpl implements UserService {
     private final UsuarioRepository usuarioRepository;
     private final HuespedRepository huespedRepository;
     private final PropietarioRepository propietarioRepository;
+    private final TarjetaCreditoRepository tarjetaCreditoRepository;
 
     private final HuespedMapper huespedMapper;
     private final PropietarioMapper propietarioMapper;
@@ -258,12 +263,24 @@ public class UserServiceImpl implements UserService {
                     return new EntityNotFoundException(errorMessage);
                 });
 
+        // Romper la asociación bidireccional @OneToOne antes de eliminar.
+        // Si no se hace, Hibernate lanza TransientObjectException en el flush porque
+        // CuentaBancaria (persistente en sesión) todavía referencia al Propietario
+        // que está siendo marcado como eliminado.
+        CuentaBancaria cuenta = propietario.getCuentaBancaria();
+        if (cuenta != null) {
+            cuenta.setPropietario(null);        // rompe la referencia inversa en sesión
+            propietario.setCuentaBancaria(null); // actualiza cuenta_bancaria_id = NULL en BD
+            propietarioRepository.saveAndFlush(propietario);
+            cuentaBancariaRepository.delete(cuenta);
+        }
+
         propietarioRepository.delete(propietario);
 
         log.info("Usuario propietario eliminado exitosamente con ID: {}", id);
     }
 
-
+    /**
      * Busca usuarios cuyo nombre contenga el texto proporcionado (búsqueda parcial, insensible a mayúsculas).
      * Si el nombre está vacío, devuelve todos los usuarios paginados.
      *
@@ -322,5 +339,166 @@ public class UserServiceImpl implements UserService {
                 });
         log.info("Usuario encontrado con DNI '{}': id={}, tipo={}", dni, usuario.getId(), usuario.getClass().getSimpleName());
         return usuarioMapper.toResponse(usuario);
+    }
+
+    // ==============================
+    // GESTIÓN DE TARJETAS DE CRÉDITO
+    // ==============================
+
+    /**
+     * Agrega una tarjeta de crédito a un huésped.
+     * Si se la agrega como principal, desmarca la tarjeta principal anterior.
+     *
+     * @param huespedId ID del huésped
+     * @param request   DTO con los datos de la nueva tarjeta
+     * @return DTO de respuesta con los datos de la tarjeta creada
+     * @throws EntityNotFoundException si no se encuentra el huésped o el banco
+     */
+    @Transactional
+    @Override
+    public TarjetaCreditoDTOResponse agregarTarjeta(Integer huespedId, TarjetaCreditoDTORequest request) {
+        log.info("Agregando tarjeta de crédito al huésped con ID: {}", huespedId);
+
+        Huesped huesped = buscarHuespedOExcepcion(huespedId);
+        Banco banco = buscarBancoOExcepcion(request.bancoId());
+
+        if (Boolean.TRUE.equals(request.esPrincipal())) {
+            desmarcarTarjetaPrincipalAnterior(huespedId);
+        }
+
+        TarjetaCredito tarjeta = tarjetaCreditoMapper.toEntity(request);
+        tarjeta.setBanco(banco);
+        tarjeta.setHuesped(huesped);
+
+        TarjetaCredito tarjetaGuardada = tarjetaCreditoRepository.save(tarjeta);
+        log.info("Tarjeta de crédito agregada exitosamente con ID: {}", tarjetaGuardada.getId());
+
+        return tarjetaCreditoMapper.toResponse(tarjetaGuardada);
+    }
+
+    /**
+     * Elimina una tarjeta de crédito si no es la principal.
+     *
+     * @param huespedId ID del huésped propietario de la tarjeta
+     * @param tarjetaId ID de la tarjeta a eliminar
+     * @throws EntityNotFoundException  si no se encuentra la tarjeta o el huésped
+     * @throws IllegalArgumentException si la tarjeta es la principal o no pertenece al huésped
+     */
+    @Transactional
+    @Override
+    public void eliminarTarjeta(Integer huespedId, Integer tarjetaId) {
+        log.info("Eliminando tarjeta con ID: {} del huésped con ID: {}", tarjetaId, huespedId);
+
+        TarjetaCredito tarjeta = buscarTarjetaOExcepcion(tarjetaId);
+        validarTarjetaPertenecealHuesped(tarjeta, huespedId);
+
+        if (Boolean.TRUE.equals(tarjeta.getEsPrincipal())) {
+            String errorMessage = "No se puede eliminar la tarjeta principal del huésped con ID: " + huespedId;
+            log.error(errorMessage);
+            throw new TarjetaPrincipalException(errorMessage);
+        }
+
+        tarjetaCreditoRepository.delete(tarjeta);
+        log.info("Tarjeta de crédito eliminada exitosamente con ID: {}", tarjetaId);
+    }
+
+    /**
+     * Cambia la tarjeta de crédito principal de un huésped.
+     *
+     * @param huespedId ID del huésped
+     * @param tarjetaId ID de la nueva tarjeta principal
+     * @return DTO de respuesta con los datos de la nueva tarjeta principal
+     * @throws EntityNotFoundException  si no se encuentra la tarjeta o el huésped
+     * @throws IllegalArgumentException si la tarjeta ya es principal o no pertenece al huésped
+     */
+    @Transactional
+    @Override
+    public TarjetaCreditoDTOResponse cambiarTarjetaPrincipal(Integer huespedId, Integer tarjetaId) {
+        log.info("Cambiando tarjeta principal del huésped con ID: {} a tarjeta con ID: {}", huespedId, tarjetaId);
+
+        TarjetaCredito nuevaPrincipal = buscarTarjetaOExcepcion(tarjetaId);
+        validarTarjetaPertenecealHuesped(nuevaPrincipal, huespedId);
+
+        if (Boolean.TRUE.equals(nuevaPrincipal.getEsPrincipal())) {
+            String errorMessage = "La tarjeta con ID: " + tarjetaId + " ya es la tarjeta principal";
+            log.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
+        }
+
+        desmarcarTarjetaPrincipalAnterior(huespedId);
+        nuevaPrincipal.setEsPrincipal(true);
+
+        TarjetaCredito tarjetaActualizada = tarjetaCreditoRepository.save(nuevaPrincipal);
+        log.info("Tarjeta principal cambiada exitosamente a ID: {}", tarjetaActualizada.getId());
+
+        return tarjetaCreditoMapper.toResponse(tarjetaActualizada);
+    }
+
+    /**
+     * Lista las tarjetas de crédito de un huésped de forma paginada.
+     *
+     * @param huespedId ID del huésped
+     * @param pageable  parámetros de paginación y orden
+     * @return página de DTOs de respuesta con los datos de las tarjetas
+     * @throws EntityNotFoundException si no se encuentra el huésped
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public Page<TarjetaCreditoDTOResponse> listarTarjetas(Integer huespedId, Pageable pageable) {
+        log.info("Listando tarjetas de crédito del huésped con ID: {}", huespedId);
+        buscarHuespedOExcepcion(huespedId);
+        var resultado = tarjetaCreditoRepository.findByHuespedId(huespedId, pageable)
+                .map(tarjetaCreditoMapper::toResponse);
+        log.info("Listado de tarjetas del huésped {} retornó {} resultados en página {}/{}",
+                huespedId, resultado.getNumberOfElements(), resultado.getNumber() + 1, resultado.getTotalPages());
+        return resultado;
+    }
+
+    // ==============================
+    // MÉTODOS AUXILIARES PRIVADOS
+    // ==============================
+
+    private Banco buscarBancoOExcepcion(Integer bancoId) {
+        return bancoRepository.findById(bancoId)
+                .orElseThrow(() -> {
+                    String errorMessage = "Banco no encontrado con ID: " + bancoId;
+                    log.error(errorMessage);
+                    return new EntityNotFoundException(errorMessage);
+                });
+    }
+
+    private Huesped buscarHuespedOExcepcion(Integer huespedId) {
+        return huespedRepository.findById(huespedId)
+                .orElseThrow(() -> {
+                    String errorMessage = "Huésped no encontrado con ID: " + huespedId;
+                    log.error(errorMessage);
+                    return new EntityNotFoundException(errorMessage);
+                });
+    }
+
+    private TarjetaCredito buscarTarjetaOExcepcion(Integer tarjetaId) {
+        return tarjetaCreditoRepository.findById(tarjetaId)
+                .orElseThrow(() -> {
+                    String errorMessage = "Tarjeta de crédito no encontrada con ID: " + tarjetaId;
+                    log.error(errorMessage);
+                    return new EntityNotFoundException(errorMessage);
+                });
+    }
+
+    private void validarTarjetaPertenecealHuesped(TarjetaCredito tarjeta, Integer huespedId) {
+        if (!tarjeta.getHuesped().getId().equals(huespedId)) {
+            String errorMessage = "La tarjeta con ID: " + tarjeta.getId() + " no pertenece al huésped con ID: " + huespedId;
+            log.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    private void desmarcarTarjetaPrincipalAnterior(Integer huespedId) {
+        tarjetaCreditoRepository.findByHuespedIdAndEsPrincipalTrue(huespedId)
+                .ifPresent(tarjetaAnterior -> {
+                    tarjetaAnterior.setEsPrincipal(false);
+                    tarjetaCreditoRepository.save(tarjetaAnterior);
+                    log.info("Tarjeta principal anterior desmarcada con ID: {}", tarjetaAnterior.getId());
+                });
     }
 }

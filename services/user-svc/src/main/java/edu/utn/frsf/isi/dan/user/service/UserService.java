@@ -9,7 +9,8 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
-import edu.utn.frsf.isi.dan.user.model.Usuario;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 public interface UserService {
@@ -28,4 +29,10 @@ public interface UserService {
     public Page<UsuarioDTOResponse> buscarPorNombre(String nombre, Pageable pageable);
     public Page<UsuarioDTOResponse> buscarPorDni(String dni, Pageable pageable);
     public UsuarioDTOResponse buscarPorDniExacto(String dni);
+
+    // Métodos de gestión de tarjetas de crédito
+    TarjetaCreditoDTOResponse agregarTarjeta(Integer huespedId, TarjetaCreditoDTORequest tarjetacreditoRequest);
+    void eliminarTarjeta(Integer huespedId, Integer tarjetaId);
+    TarjetaCreditoDTOResponse cambiarTarjetaPrincipal(Integer huespedId, Integer tarjetaId);
+    Page<TarjetaCreditoDTOResponse> listarTarjetas(Integer huespedId, Pageable pageable);
 }
