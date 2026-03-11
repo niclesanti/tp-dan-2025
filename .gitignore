@@ -16,3 +16,26 @@ buildNumber.properties
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 .DS_Store
+
+# ── Docker & Environment ──────────────────────────────────────────
+# Archivos de entorno con credenciales
+.env.prod
+.env.local
+*.env.secret
+.env
+.env.prod.template
+
+# ── Application Logs & Dumps ──────────────────────────────────────
+services/*/logs/
+*.log
+*.hprof
+
+# ── IDE ───────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# ── OS ────────────────────────────────────────────────────────────
+Thumbs.db

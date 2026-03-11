@@ -8,6 +8,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @RestControllerAdvice
 public class ControllerAdvisor {
@@ -45,11 +46,42 @@ public class ControllerAdvisor {
         return new ResponseEntity<>(exceptionInfo, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    /**
+     * Maneja TarjetaPrincipalException → 422 UNPROCESSABLE_ENTITY
+     * Se lanza cuando se intenta eliminar la tarjeta principal de un huésped.
+     */
+    @ExceptionHandler(TarjetaPrincipalException.class)
+    public ResponseEntity<ExceptionInfo> handleTarjetaPrincipalException(TarjetaPrincipalException ex, WebRequest request) {
+        ExceptionInfo exceptionInfo = new ExceptionInfo(
+                ex.getMessage(),
+                request.getDescription(false),
+                String.valueOf(System.currentTimeMillis()),
+                HttpStatus.UNPROCESSABLE_ENTITY.value()
+        );
+        return new ResponseEntity<>(exceptionInfo, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ExceptionInfo> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .reduce((message1, message2) -> message1 + ", " + message2)
+                .orElse("Validation error");
+
+        ExceptionInfo exceptionInfo = new ExceptionInfo(
+                errorMessage,
+                request.getDescription(false),
+                String.valueOf(System.currentTimeMillis()),
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return new ResponseEntity<>(exceptionInfo, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ExceptionInfo> handleHandlerMethodValidationException(HandlerMethodValidationException ex, WebRequest request) {
+        String errorMessage = ex.getAllErrors().stream()
+                .map(error -> error.getDefaultMessage())
+                .reduce((m1, m2) -> m1 + ", " + m2)
                 .orElse("Validation error");
 
         ExceptionInfo exceptionInfo = new ExceptionInfo(

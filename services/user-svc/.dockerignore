@@ -1,0 +1,56 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║ .dockerignore para user-svc                                       ║
+# ║                                                                    ║
+# ║ Archivos/directorios que NO deben copiarse al contexto Docker    ║
+# ║ Esto acelera el build y reduce el tamaño de la imagen            ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+# Maven
+target/
+!target/*.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# IDE
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+*.iml
+*.swp
+*.swo
+*.bak
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Tests
+src/test/
+**/test-results/
+
+# Logs
+logs/
+*.log
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
