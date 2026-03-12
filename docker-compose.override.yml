@@ -41,6 +41,37 @@ services:
         max-size: "5m"
         max-file: "2"
 
+  # ── PostgreSQL (Development) ──────────────────────────────────
+  postgres:
+    ports:
+      - "5433:5432"  # Exponer para conexión directa desde IDE (5433 evita conflicto con postgres local)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── PgAdmin (Development) ─────────────────────────────────────
+  pgadmin:
+    ports:
+      - "6081:80"  # Acceso web: http://localhost:6081
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ── RabbitMQ (Development) ────────────────────────────────────
+  rabbitmq:
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI: http://localhost:15672
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # ── User Service (Development) ──────────────────────────────────
   user-svc:
     ports:
@@ -56,6 +87,25 @@ services:
       # Código fuente montado para hot reload (opcional)
       # - ./services/user-svc/src:/app/src:ro
       - ./services/user-svc/logs:/app/logs  # Logs persistentes
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Gestion Service (Development) ──────────────────────────────
+  gestion-svc:
+    ports:
+      - "8083:8080"  # API REST: http://localhost:8083
+      - "5006:5005"  # Puerto para debug remoto
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      # Habilitar debugging remoto
+      JAVA_TOOL_OPTIONS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+        -Xdebug
+    volumes:
+      - ./services/gestion-svc/logs:/app/logs
     logging:
       driver: "json-file"
       options:

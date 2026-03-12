@@ -5,23 +5,21 @@
 ### 1. `ci.yml` - Tests Simples (Recomendado para comenzar)
 
 **Características**:
-- ✅ Ejecuta tests únicamente de **user-svc** (desarrollo incremental)
-- ✅ Un solo job, simple y rápido
+- ✅ Ejecuta tests de **user-svc** y **gestion-svc** en jobs paralelos
+- ✅ Dos jobs independientes (uno por servicio)
 - ✅ Ideal para proyectos en desarrollo
-- ⏱️ Tiempo: ~2-3 minutos
+- ⏱️ Tiempo: ~2-3 minutos (paralelo)
 
 **Cuándo se ejecuta**:
 - Push a `develop` o `main`
 - Pull Request a `develop` o `main`
 
 **Qué hace**:
-1. Levanta MySQL como servicio de GitHub Actions
-2. Configura Java 21
-3. Ejecuta `./mvnw clean test -pl services/user-svc -am` desde la raíz
-4. Corre tests solo de **user-svc** y sus dependencias (dan-common-lib)
-5. Publica resultados de tests
+1. **Job `test`** (user-svc): Levanta MySQL, ejecuta `./mvnw clean test -pl services/user-svc -am -B`
+2. **Job `test-gestion-svc`** (gestion-svc): Testcontainers levanta PostgreSQL + RabbitMQ automáticamente, ejecuta `./mvnw clean test -pl services/gestion-svc -am -B`
+3. Ambos jobs publican resultados de tests con `dorny/test-reporter`
 
-**Nota**: A medida que se completen gestion-svc y reservas-svc, se agregarán al workflow.
+**Nota**: reservas-svc se agregará al workflow cuando esté completo.
 
 ### 2. `ci-parallel.yml` - Tests Paralelos (Avanzado - Opcional)
 
@@ -258,31 +256,22 @@ env:
 
 ## 🔄 Cómo Agregar Más Servicios al CI
 
-Actualmente el CI ejecuta solo **user-svc**. Cuando gestion-svc y reservas-svc estén listos, agrégalos así:
+El CI ya ejecuta **user-svc** y **gestion-svc**. Cuando reservas-svc esté listo, agrégualo así:
+
+### Estado actual
+
+| Servicio | CI | Estrategia de test |
+|---|---|---|
+| **user-svc** | ✅ Job `test` | MySQL service container en GitHub Actions |
+| **gestion-svc** | ✅ Job `test-gestion-svc` | Testcontainers (PostgreSQL + RabbitMQ) |
+| **reservas-svc** | ⬜ Pendiente | Testcontainers (MongoDB + RabbitMQ) |
 
 ### Paso 1: Preparar el servicio localmente
 
-**Para gestion-svc** (PostgreSQL):
-1. Asegúrate de tener `src/test/resources/application.properties` con H2:
-   ```properties
-   spring.datasource.url=jdbc:h2:mem:testdb
-   spring.jpa.hibernate.ddl-auto=create-drop
-   spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
-   ```
-
-2. Agrega H2 al `pom.xml`:
-   ```xml
-   <dependency>
-       <groupId>com.h2database</groupId>
-       <artifactId>h2</artifactId>
-       <scope>test</scope>
-   </dependency>
-   ```
-
-3. Verifica localmente:
-   ```bash
-   ./mvnw test -pl services/gestion-svc -am
-   ```
+✅ **gestion-svc** (PostgreSQL + RabbitMQ) — **Ya implementado**:
+- `src/test/resources/application-test.properties` con H2 en modo PostgreSQL
+- `GestionSvcApplicationTests` con `@Testcontainers` + `PostgreSQLContainer` + `RabbitMQContainer`
+- Verifica con: `./mvnw test -pl services/gestion-svc -am`
 
 **Para reservas-svc** (MongoDB):
 1. Asegúrate de tener configuración de test con embedded MongoDB:

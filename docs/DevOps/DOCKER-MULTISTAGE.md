@@ -246,4 +246,6 @@ docker compose up -d --build
 
 ---
 
-**Siguiente paso**: Agrega más servicios (gestion-svc, reservas-svc) con el mismo patrón.
+**gestion-svc** ya implementado ✅ con el mismo patrón (ver `services/gestion-svc/Dockerfile`). Nota especial: al depender de `dan-common-lib` (módulo local), su Dockerfile usa el `mvnw` raíz con flag `-pl services/gestion-svc -am` para construir el árbol multi-módulo completo.
+
+**Siguiente paso**: Agrega reservas-svc con el mismo patrón.

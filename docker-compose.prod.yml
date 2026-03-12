@@ -105,3 +105,103 @@ services:
       timeout: 5s
       retries: 3
       start_period: 60s
+
+  # ── PostgreSQL (Production) ─────────────────────────────────────
+  postgres:
+    # NO exponemos el puerto 5432 al host en producción
+    command:
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=512MB
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        compress: "true"
+
+  # ── PgAdmin (Production) ────────────────────────────────────────
+  # En producción, se recomienda NO exponer pgAdmin o usar VPN/Túnel SSH
+  pgadmin:
+    profiles:
+      - admin  # Solo se levanta con: docker compose --profile admin up
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── RabbitMQ (Production) ───────────────────────────────────────
+  rabbitmq:
+    # NO exponemos puertos al host en producción
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        compress: "true"
+
+  # ── Gestion Service (Production) ───────────────────────────────
+  gestion-svc:
+    ports:
+      - "8083:8080"  # En producción real, usar reverse proxy (nginx/traefik)
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs/heap_dump.hprof
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 768M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    volumes:
+      - ./services/gestion-svc/logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 60s

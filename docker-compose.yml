@@ -19,6 +19,12 @@ volumes:
   mysql_data:
     name: tp-dan-mysql-data
     driver: local
+  postgres_data:
+    name: tp-dan-postgres-data
+    driver: local
+  pgadmin_data:
+    name: tp-dan-pgadmin-data
+    driver: local
 
 # ── Services ──────────────────────────────────────────────────────
 services:
@@ -62,6 +68,66 @@ services:
       mysql:
         condition: service_healthy
 
+  # ── PostgreSQL Database ────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: tp-dan-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppwd}
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/initdb/:/docker-entrypoint-initdb.d/:ro
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-appuser} -d ${POSTGRES_DB:-appdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── PgAdmin ──────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tp-dan-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./infra/pgadmin/config/servers/:/pgadmin4/servers/:ro
+    networks:
+      - tp-dan-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── RabbitMQ ─────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: tp-dan-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin}
+    volumes:
+      - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   # ── User Service ────────────────────────────────────────────────
   user-svc:
     build:
@@ -79,6 +145,36 @@ services:
       - tp-dan-network
     depends_on:
       mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── Gestion Service ─────────────────────────────────────────────
+  gestion-svc:
+    build:
+      context: .
+      dockerfile: services/gestion-svc/Dockerfile
+    container_name: tp-dan-gestion-svc
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppwd}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    networks:
+      - tp-dan-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
