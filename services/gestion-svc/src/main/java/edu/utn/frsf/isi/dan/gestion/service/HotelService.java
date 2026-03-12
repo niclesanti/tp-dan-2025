@@ -1,31 +1,29 @@
 package edu.utn.frsf.isi.dan.gestion.service;
 
-import edu.utn.frsf.isi.dan.gestion.dao.HotelRepository;
-import edu.utn.frsf.isi.dan.gestion.model.Hotel;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import edu.utn.frsf.isi.dan.gestion.dto.HotelDTORequest;
+import edu.utn.frsf.isi.dan.gestion.dto.HotelDTOResponse;
+import edu.utn.frsf.isi.dan.gestion.dto.HotelDTOUpdate;
+import edu.utn.frsf.isi.dan.gestion.model.Amenity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 
-@Service
-public class HotelService {
-    @Autowired
-    private HotelRepository hotelRepository;
+public interface HotelService {
 
-    public Hotel save(Hotel hotel) {
-        return hotelRepository.save(hotel);
-    }
+    HotelDTOResponse crearHotel(HotelDTORequest request);
 
-    public void deleteById(Integer id) {
-        hotelRepository.deleteById(id);
-    }
+    HotelDTOResponse actualizarHotel(Integer id, HotelDTOUpdate request);
 
-    public Optional<Hotel> findById(Integer id) {
-        return hotelRepository.findById(id);
-    }
+    HotelDTOResponse cerrarHotel(Integer id);
 
-    public List<Hotel> findAll() {
-        return hotelRepository.findAll();
-    }
+    HotelDTOResponse buscarHotelPorId(Integer id);
+
+    Page<HotelDTOResponse> buscarHoteles(String nombre, Integer categoria,
+                                         String domicilio, Amenity amenity,
+                                         Pageable pageable);
+
+    HotelDTOResponse agregarAmenities(Integer hotelId, List<Amenity> amenities);
+
+    void eliminarAmenity(Integer hotelId, Long amenityId);
 }

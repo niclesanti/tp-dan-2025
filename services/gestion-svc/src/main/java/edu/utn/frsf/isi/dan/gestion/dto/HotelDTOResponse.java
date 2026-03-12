@@ -1,5 +1,6 @@
 package edu.utn.frsf.isi.dan.gestion.dto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public record HotelDTOResponse(
@@ -12,6 +13,7 @@ public record HotelDTOResponse(
         String telefono,
         String correoContacto,
         Integer categoria,
+        LocalDate fechaCierre,
         List<AmenityHotelDTOResponse> amenities
 ) {
 }
