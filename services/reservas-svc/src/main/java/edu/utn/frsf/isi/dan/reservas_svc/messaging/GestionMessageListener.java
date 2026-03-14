@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 
-import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
-import edu.utn.frsf.isi.dan.reservas_svc.repository.HabitacionRepository;
 import edu.utn.frsf.isi.dan.reservas_svc.service.HabitacionService;
 import edu.utn.frsf.isi.dan.shared.HabitacionEvent;
 import lombok.extern.log4j.Log4j2;

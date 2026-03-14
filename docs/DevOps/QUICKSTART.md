@@ -13,10 +13,11 @@
 - **services/user-svc/Dockerfile** - Multi-stage build optimizado
 - **services/user-svc/.dockerignore** - Optimización de contexto de build
 - **services/gestion-svc/Dockerfile** - Multi-stage build con soporte multi-módulo (`-am`)
+- **services/reservas-svc/Dockerfile** - Multi-stage build con soporte multi-módulo (`-am`)
 
 ### 📝 Perfiles de Spring Boot
-- **application-dev.properties** - Perfil de desarrollo (user-svc y gestion-svc)
-- **application-prod.properties** - Perfil de producción (user-svc y gestion-svc)
+- **application-dev.properties** - Perfil de desarrollo (user-svc, gestion-svc y reservas-svc)
+- **application-prod.properties** - Perfil de producción (user-svc, gestion-svc y reservas-svc)
 - **application-local.properties** - Perfil para correr desde IDE (localhost)
 
 ### 📚 Documentación
@@ -69,8 +70,11 @@ Una vez levantados, accede a:
 | **user-svc Swagger** | http://localhost:8081/swagger-ui | Documentación interactiva user-svc |
 | **gestion-svc API** | http://localhost:8083 | Endpoints de hoteles, habitaciones y tarifas |
 | **gestion-svc Swagger** | http://localhost:8083/swagger-ui | Documentación interactiva gestion-svc |
+| **reservas-svc API** | http://localhost:8082 | Endpoints de reservas y huéspedes |
+| **reservas-svc Swagger** | http://localhost:8082/swagger-ui | Documentación interactiva reservas-svc |
 | **PHPMyAdmin** | http://localhost:6080 | Administración MySQL |
 | **PgAdmin** | http://localhost:6081 | Administración PostgreSQL |
+| **Mongo Express** | http://localhost:6091 | Administración MongoDB |
 | **RabbitMQ UI** | http://localhost:15672 | Consola de mensajería |
 
 ### Credenciales MySQL (Desarrollo)
@@ -81,6 +85,12 @@ Una vez levantados, accede a:
 
 ### Credenciales RabbitMQ (Desarrollo)
 - **Usuario**: `admin` / **Password**: `admin`
+
+### Credenciales MongoDB (Desarrollo)
+- **Usuario**: `root` / **Password**: `rootpwd` / **BD**: `reservas` / **Puerto host**: `27017`
+
+### Credenciales Mongo Express (Desarrollo)
+- Acceso sin autenticación (solo desarrollo)
 
 ### Credenciales PgAdmin (Desarrollo)
 - **Email**: `admin@admin.com` / **Password**: `admin`

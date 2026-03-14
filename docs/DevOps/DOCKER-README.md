@@ -6,7 +6,7 @@ Sistema de Gestión Hotelera con arquitectura de microservicios.
 
 - [Docker Desktop](https://docs.docker.com/desktop/) (Windows/Mac) o Docker Engine (Linux)
 - [Docker Compose](https://docs.docker.com/compose/install/) v2.0+
-- Puertos disponibles: `3306`, `5005`, `5006`, `5433`, `5672`, `6080`, `6081`, `8081`, `8083`, `15672`
+- Puertos disponibles: `3306`, `5005`, `5006`, `5007`, `5433`, `5672`, `6080`, `6081`, `6091`, `8081`, `8082`, `8083`, `15672`, `27017`
 
 ## 🚀 Inicio Rápido
 
@@ -28,8 +28,11 @@ Servicios disponibles:
 - **user-svc Swagger**: http://localhost:8081/swagger-ui
 - **gestion-svc API**: http://localhost:8083 (debug: 5006)
 - **gestion-svc Swagger**: http://localhost:8083/swagger-ui
+- **reservas-svc API**: http://localhost:8082 (debug: 5007)
+- **reservas-svc Swagger**: http://localhost:8082/swagger-ui
 - **PHPMyAdmin**: http://localhost:6080
 - **PgAdmin**: http://localhost:6081
+- **Mongo Express**: http://localhost:6091
 - **RabbitMQ UI**: http://localhost:15672
 
 ### Producción
@@ -53,9 +56,9 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 │  │  MySQL   │  │PHPMyAdmin │  │ user-svc │  │   RabbitMQ       │  │
 │  │  :3306   │◄─┤  :6080    │  │  :8081   │  │ :5672 / :15672   │  │
 │  └──────────┘  └───────────┘  └──────────┘  └──────────────────┘  │
-│       ▲                            │                 ▲              │
-│       └────────────────────────────┘                 │              │
-│                                                       │              │
+│       ▲                            │                 ▲    ▲         │
+│       └────────────────────────────┘                 │    │         │
+│                                                       │    │         │
 │  ┌──────────┐  ┌───────────┐  ┌────────────────────────────────┐  │
 │  │PostgreSQL│  │  PgAdmin  │  │         gestion-svc            │  │
 │  │  :5432   │◄─┤  :6081    │  │  :8083  (PostgreSQL+RabbitMQ)  │  │
@@ -63,7 +66,12 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 │       ▲                                    │         │              │
 │       └────────────────────────────────────┘         │              │
 │                                                       │              │
-│                    ◄──────────────────────────────────┘              │
+│  ┌──────────┐  ┌───────────┐  ┌────────────────────────────────┐  │
+│  │ MongoDB  │  │  Mongo    │  │         reservas-svc           │  │
+│  │ :27017   │◄─┤ Express   │  │  :8082   (MongoDB+RabbitMQ)    │  │
+│  └──────────┘  │  :6091    │  └────────────────────────────────┘  │
+│                └───────────┘               │         │              │
+│                                            └─────────┘              │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -85,6 +93,13 @@ tp-dan-2025/
 │   │       ├── application-prod.properties
 │   │       └── application-local.properties
 │   └── gestion-svc/
+│       ├── Dockerfile               # 🐋 Multi-stage build multi-módulo (-am)
+│       └── src/main/resources/
+│           ├── application.properties
+│           ├── application-dev.properties
+│           ├── application-prod.properties
+│           └── application-local.properties
+│   └── reservas-svc/
 │       ├── Dockerfile               # 🐋 Multi-stage build multi-módulo (-am)
 │       └── src/main/resources/
 │           ├── application.properties

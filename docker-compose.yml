@@ -25,6 +25,9 @@ volumes:
   pgadmin_data:
     name: tp-dan-pgadmin-data
     driver: local
+  mongo_data:
+    name: tp-dan-mongo-data
+    driver: local
 
 # ── Services ──────────────────────────────────────────────────────
 services:
@@ -173,6 +176,73 @@ services:
       - tp-dan-network
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── MongoDB Database ─────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: tp-dan-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-rootpwd}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-reservas}
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Mongo Express ───────────────────────────────────────────────
+  mongo-express:
+    image: mongo-express:latest
+    container_name: tp-dan-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-rootpwd}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER:-root}:${MONGO_PASSWORD:-rootpwd}@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - tp-dan-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ── Reservas Service ────────────────────────────────────────────
+  reservas-svc:
+    build:
+      context: .
+      dockerfile: services/reservas-svc/Dockerfile
+    container_name: tp-dan-reservas-svc
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      MONGO_HOST: mongodb
+      MONGO_USER: ${MONGO_USER:-root}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:-rootpwd}
+      MONGO_DB: ${MONGO_DB:-reservas}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    networks:
+      - tp-dan-network
+    depends_on:
+      mongodb:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
