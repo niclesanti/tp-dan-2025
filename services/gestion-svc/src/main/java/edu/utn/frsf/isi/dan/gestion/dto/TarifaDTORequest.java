@@ -7,10 +7,8 @@ import java.time.LocalDate;
 
 public record TarifaDTORequest(
 
-        @NotNull(message = "La fecha de inicio es obligatoria")
         LocalDate fechaInicio,
 
-        @NotNull(message = "La fecha de fin es obligatoria")
         LocalDate fechaFin,
 
         @NotNull(message = "El ID del tipo de habitación es obligatorio")

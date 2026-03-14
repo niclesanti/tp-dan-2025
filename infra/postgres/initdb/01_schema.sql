@@ -47,7 +47,7 @@ ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS tp_dan.tarifa (
     id serial PRIMARY KEY,
     fecha_inicio date NOT NULL,
-    fecha_fin date NOT NULL,
+    fecha_fin date,
     id_tipo_habitacion integer NOT NULL REFERENCES tp_dan.tipo_habitacion(id),
     precio_noche decimal(10,2) NOT NULL
 );
