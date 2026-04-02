@@ -1,31 +1,25 @@
 package edu.utn.frsf.isi.dan.reservas_svc.service;
 
-import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
-import edu.utn.frsf.isi.dan.reservas_svc.repository.ReservaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.*;
+import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-import java.util.Optional;
-
-@Service
-public class ReservaService {
-    @Autowired
-    private ReservaRepository reservaRepository;
-
-    public List<Reserva> findAll() {
-        return reservaRepository.findAll();
-    }
-
-    public Optional<Reserva> findById(String id) {
-        return reservaRepository.findById(id);
-    }
-
-    public Reserva save(Reserva reserva) {
-        return reservaRepository.save(reserva);
-    }
-
-    public void deleteById(String id) {
-        reservaRepository.deleteById(id);
-    }
+public interface ReservaService {
+    
+    ReservaDTOResponse crearReserva(ReservaDTORequest request);
+    
+    ReservaDTOResponse buscarReservaPorId(String id);
+    
+    Page<ReservaDTOResponse> buscarReservasPorHuesped(String huespedId, Pageable pageable);
+    
+    ReservaDTOResponse actualizarEstadoReserva(String id, EstadoReserva nuevoEstado);
+    
+    ReservaDTOResponse realizarCheckIn(String id);
+    
+    ReservaDTOResponse agregarPago(String id, PagoDTORequest pagoRequest);
+    
+    ReservaDTOResponse agregarReview(String id, ReviewDTORequest reviewRequest, boolean esCliente);
+    
+    void cancelarReserva(String id);
 }

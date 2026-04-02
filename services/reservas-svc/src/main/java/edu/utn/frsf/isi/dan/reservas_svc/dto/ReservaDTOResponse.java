@@ -1,21 +1,23 @@
-package edu.utn.frsf.isi.dan.reservas_svc.model;
+package edu.utn.frsf.isi.dan.reservas_svc.dto;
 
-import lombok.*;
+import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
+import edu.utn.frsf.isi.dan.reservas_svc.model.Huesped;
+import edu.utn.frsf.isi.dan.reservas_svc.model.Pago;
+import edu.utn.frsf.isi.dan.reservas_svc.model.Review;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "reserva")
-public class Reserva {
-    @Id
-    private String _id;
+public class ReservaDTOResponse {
+    private String id;
     private String idHabitacion;
     private Integer hotelId;
     private Instant createdAt;
@@ -28,5 +30,4 @@ public class Reserva {
     private Review clientReview;
     private Review hostReview;
     private EstadoReserva estadoReserva;
-
 }

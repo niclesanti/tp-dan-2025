@@ -6,9 +6,12 @@ import edu.utn.frsf.isi.dan.gestion.dto.HotelDTORequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelDTOResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelDTOUpdate;
 import edu.utn.frsf.isi.dan.gestion.mapper.HotelMapper;
+import edu.utn.frsf.isi.dan.gestion.mapper.SharedDTOMapper;
+import edu.utn.frsf.isi.dan.gestion.messaging.GestionMessagePublisher;
 import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
+import edu.utn.frsf.isi.dan.shared.HotelCierreEvent;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -30,6 +34,8 @@ public class HotelServiceImpl implements HotelService {
     private final HotelRepository hotelRepository;
     private final AmenityHotelRepository amenityHotelRepository;
     private final HotelMapper hotelMapper;
+    private final GestionMessagePublisher messagePublisher;
+    private final SharedDTOMapper sharedDTOMapper;
 
     /**
      * Crea un nuevo hotel con los datos proporcionados.
@@ -70,10 +76,8 @@ public class HotelServiceImpl implements HotelService {
     /**
      * Marca un hotel como cerrado estableciendo la fecha de cierre en el día actual.
      * Automáticamente todas sus habitaciones quedan no disponibles.
-     * <p>
-     * NOTA: El mensaje asíncrono al servicio de reservas se implementará
-     * cuando reservas-svc esté desarrollado.
-     * </p>
+     * Publica un evento JMS al servicio de reservas para que cree reservas BLOQUEADAS
+     * para todas las habitaciones del hotel (checkIn=hoy, checkOut=null).
      *
      * @param id ID del hotel a cerrar
      * @return DTO de respuesta con los datos del hotel cerrado
@@ -92,6 +96,10 @@ public class HotelServiceImpl implements HotelService {
         }
         hotel.setFechaCierre(LocalDate.now());
         var hotelCerrado = hotelRepository.save(hotel);
+        
+        // Publicar evento JMS para bloquear todas las habitaciones en el servicio de reservas
+        publicarEventoCierreHotel(hotelCerrado);
+        
         log.info("Hotel cerrado exitosamente con ID: {} en fecha: {}", hotelCerrado.getId(), hotelCerrado.getFechaCierre());
         return hotelMapper.toResponse(hotelCerrado);
     }
@@ -214,5 +222,23 @@ public class HotelServiceImpl implements HotelService {
                     log.error(msg);
                     return new EntityNotFoundException(msg);
                 });
+    }
+
+    private void publicarEventoCierreHotel(Hotel hotel) {
+        log.info("Publicando evento de cierre para hotel ID: {} con {} habitaciones", 
+                hotel.getId(), hotel.getHabitaciones().size());
+        
+        var hotelDTO = sharedDTOMapper.toHotelDTO(hotel);
+        var habitacionesDTO = hotel.getHabitaciones().stream()
+                .map(sharedDTOMapper::toHabitacionDTO)
+                .collect(Collectors.toList());
+        
+        var cierreEvent = HotelCierreEvent.builder()
+                .hotel(hotelDTO)
+                .habitaciones(habitacionesDTO)
+                .build();
+        
+        messagePublisher.publishHotelCierreEvent(cierreEvent);
+        log.info("Evento de cierre publicado para hotel ID: {}", hotel.getId());
     }
 }

@@ -9,9 +9,13 @@ import edu.utn.frsf.isi.dan.gestion.dto.HabitacionDTOResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HabitacionDTOUpdate;
 import edu.utn.frsf.isi.dan.gestion.dto.TarifaDTOResponse;
 import edu.utn.frsf.isi.dan.gestion.mapper.HabitacionMapper;
+import edu.utn.frsf.isi.dan.gestion.mapper.SharedDTOMapper;
 import edu.utn.frsf.isi.dan.gestion.mapper.TarifaMapper;
+import edu.utn.frsf.isi.dan.gestion.messaging.GestionMessagePublisher;
 import edu.utn.frsf.isi.dan.gestion.model.Habitacion;
 import edu.utn.frsf.isi.dan.gestion.model.Tarifa;
+import edu.utn.frsf.isi.dan.shared.HabitacionEvent;
+import edu.utn.frsf.isi.dan.shared.TipoEvento;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -38,6 +43,8 @@ public class HabitacionServiceImpl implements HabitacionService {
     private final TarifaRepository tarifaRepository;
     private final HabitacionMapper habitacionMapper;
     private final TarifaMapper tarifaMapper;
+    private final SharedDTOMapper sharedDTOMapper;
+    private final GestionMessagePublisher messagePublisher;
     
 
     
@@ -59,6 +66,9 @@ public class HabitacionServiceImpl implements HabitacionService {
         var habitacionGuardada = habitacionRepository.save(habitacion);
         log.info("Habitación creada exitosamente con ID: {}", habitacionGuardada.getId());
         
+        // Publicar evento JMS
+        publicarEventoHabitacion(habitacionGuardada, TipoEvento.CREAR);
+        
         return habitacionMapper.toResponse(habitacionGuardada);
     }
 
@@ -77,6 +87,9 @@ public class HabitacionServiceImpl implements HabitacionService {
         var habitacionActualizada = habitacionRepository.save(habitacion);
         log.info("Habitación actualizada exitosamente con ID: {}", id);
         
+        // Publicar evento JMS
+        publicarEventoHabitacion(habitacionActualizada, TipoEvento.ACTUALIZAR_DATOS);
+        
         return habitacionMapper.toResponse(habitacionActualizada);
     }
 
@@ -85,9 +98,13 @@ public class HabitacionServiceImpl implements HabitacionService {
     public void eliminarHabitacion(Integer id) {
         log.info("Eliminando habitación con ID: {}", id);
         
+        var habitacion = buscarHabitacionOExcepcion(id);
         habitacionRepository.deleteById(id);
         
         log.info("Habitación eliminada exitosamente con ID: {}", id);
+        
+        // Publicar evento JMS
+        publicarEventoHabitacion(habitacion, TipoEvento.ELIMINAR);
     }
 
     @Transactional(readOnly = true)
@@ -195,6 +212,41 @@ public class HabitacionServiceImpl implements HabitacionService {
                     log.error(msg);
                     return new EntityNotFoundException(msg);
                 });
+    }
+
+    private void publicarEventoHabitacion(Habitacion habitacion, TipoEvento tipoEvento) {
+        try {
+            var habitacionDTO = sharedDTOMapper.toHabitacionDTO(habitacion);
+            var hotelDTO = sharedDTOMapper.toHotelDTO(habitacion.getHotel());
+            habitacionDTO.setHotel(hotelDTO);
+            
+            // Obtener amenities del hotel
+            if (habitacion.getHotel().getAmenities() != null) {
+                var amenitiesStr = habitacion.getHotel().getAmenities().stream()
+                        .map(a -> a.getAmenity().name())
+                        .collect(Collectors.toList());
+                habitacionDTO.setAmenities(amenitiesStr);
+            }
+            
+            // Obtener precio vigente
+            if (tipoEvento == TipoEvento.CREAR || tipoEvento == TipoEvento.ACTUALIZAR_DATOS) {
+                LocalDate hoy = LocalDate.now();
+                List<Tarifa> tarifasVigentes = tarifaRepository.buscarTarifasVigentesEnFecha(
+                        habitacion.getTipoHabitacion().getId(), hoy);
+                if (!tarifasVigentes.isEmpty()) {
+                    habitacionDTO.setPrecioNoche(tarifasVigentes.get(0).getPrecioNoche());
+                }
+            }
+            
+            var event = HabitacionEvent.builder()
+                    .habitacion(habitacionDTO)
+                    .tipoEvento(tipoEvento)
+                    .build();
+            
+            messagePublisher.publishHabitacionEvent(event);
+        } catch (Exception e) {
+            log.error("Error al publicar evento de habitación ID {}: {}", habitacion.getId(), e.getMessage(), e);
+        }
     }
 
 }

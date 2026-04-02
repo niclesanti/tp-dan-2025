@@ -4,9 +4,13 @@ import edu.utn.frsf.isi.dan.gestion.dao.TarifaRepository;
 import edu.utn.frsf.isi.dan.gestion.dao.TipoHabitacionRepository;
 import edu.utn.frsf.isi.dan.gestion.dto.TarifaDTORequest;
 import edu.utn.frsf.isi.dan.gestion.dto.TarifaDTOResponse;
+import edu.utn.frsf.isi.dan.gestion.mapper.SharedDTOMapper;
 import edu.utn.frsf.isi.dan.gestion.mapper.TarifaMapper;
+import edu.utn.frsf.isi.dan.gestion.messaging.GestionMessagePublisher;
 import edu.utn.frsf.isi.dan.gestion.model.Tarifa;
 import edu.utn.frsf.isi.dan.gestion.model.TipoHabitacion;
+import edu.utn.frsf.isi.dan.shared.HabitacionEvent;
+import edu.utn.frsf.isi.dan.shared.TipoEvento;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,8 @@ public class TarifaServiceImpl implements TarifaService {
     private final TarifaRepository tarifaRepository;
     private final TipoHabitacionRepository tipoHabitacionRepository;
     private final TarifaMapper tarifaMapper;
+    private final SharedDTOMapper sharedDTOMapper;
+    private final GestionMessagePublisher messagePublisher;
 
     @Transactional
     @Override
@@ -106,6 +112,10 @@ public class TarifaServiceImpl implements TarifaService {
         nuevaTarifa.setFechaFin(null);
         var tarifaGuardada = tarifaRepository.save(nuevaTarifa);
         log.info("Tarifa normal creada con ID: {}", tarifaGuardada.getId());
+        
+        // Publicar evento de cambio de precio
+        publicarEventoCambioPrecio(tarifaGuardada);
+        
         return tarifaMapper.toResponse(tarifaGuardada);
     }
 
@@ -145,6 +155,10 @@ public class TarifaServiceImpl implements TarifaService {
 
         log.info("Tarifa promocional creada con ID: {} para tipoHabitacion {}",
                 promoGuardada.getId(), tipoHabitacion.getId());
+        
+        // Publicar evento de cambio de precio (la promocional)
+        publicarEventoCambioPrecio(promoGuardada);
+        
         return tarifaMapper.toResponse(promoGuardada);
     }
 
@@ -190,5 +204,20 @@ public class TarifaServiceImpl implements TarifaService {
     private TipoHabitacion buscarTipoHabitacionOExcepcion(Integer id) {
         return tipoHabitacionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("TipoHabitacion no encontrada con ID: " + id));
+    }
+    
+    private void publicarEventoCambioPrecio(Tarifa tarifa) {
+        try {
+            var tarifaDTO = sharedDTOMapper.toTarifaDTO(tarifa);
+            var event = HabitacionEvent.builder()
+                    .tarifa(tarifaDTO)
+                    .tipoEvento(TipoEvento.ACTUALIZAR_PRECIO)
+                    .build();
+            messagePublisher.publishHabitacionEvent(event);
+            log.info("Evento ACTUALIZAR_PRECIO publicado para tipoHabitacion ID: {}", 
+                    tarifa.getTipoHabitacion().getId());
+        } catch (Exception e) {
+            log.error("Error al publicar evento de cambio de precio: {}", e.getMessage(), e);
+        }
     }
 }
