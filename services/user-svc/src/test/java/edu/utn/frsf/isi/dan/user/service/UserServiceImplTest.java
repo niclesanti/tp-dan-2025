@@ -92,6 +92,28 @@ class UserServiceImplTest {
 
             verify(huespedRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("Debe inicializar lista de tarjetas cuando mapper retorna null")
+        void debeInicializarListaTarjetasSiMapperRetornaNull() {
+            HuespedDTORequest request = TestDataFactory.huespedDTORequest();
+            Banco banco = TestDataFactory.banco();
+            Huesped huesped = TestDataFactory.huesped();
+            huesped.setTarjetaCredito(null);
+            Huesped guardado = TestDataFactory.huesped();
+            TarjetaCredito tarjeta = TestDataFactory.tarjetaCredito(guardado, banco, true);
+
+            when(bancoRepository.findById(request.tarjetaCredito().bancoId())).thenReturn(Optional.of(banco));
+            when(huespedMapper.toEntity(request)).thenReturn(huesped);
+            when(tarjetaCreditoMapper.toEntity(request.tarjetaCredito())).thenReturn(tarjeta);
+            when(huespedRepository.save(huesped)).thenReturn(guardado);
+            when(huespedMapper.toResponse(guardado)).thenReturn(TestDataFactory.huespedDTOResponse());
+
+            HuespedDTOResponse result = userService.createUsuarioHuesped(request);
+
+            assertThat(result.id()).isEqualTo(1);
+            assertThat(huesped.getTarjetaCredito()).isNotNull();
+        }
     }
 
     @Nested
@@ -537,6 +559,25 @@ class UserServiceImplTest {
             assertThatThrownBy(() -> userService.eliminarTarjeta(1, 99))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("99");
+        }
+
+        @Test
+        @DisplayName("Debe cambiar tarjeta principal aunque no exista principal previa")
+        void debeCambiarPrincipalSinPrincipalPrevia() {
+            Huesped huesped = TestDataFactory.huesped();
+            Banco banco = TestDataFactory.banco();
+            TarjetaCredito nuevaPrincipal = TestDataFactory.tarjetaCredito(2, huesped, banco, false);
+            TarjetaCreditoDTOResponse response = new TarjetaCreditoDTOResponse(2, "5500005555555559", "Juan Pérez", "06/26", true, "Banco Nación");
+
+            when(tarjetaCreditoRepository.findById(2)).thenReturn(Optional.of(nuevaPrincipal));
+            when(tarjetaCreditoRepository.findByHuespedIdAndEsPrincipalTrue(1)).thenReturn(Optional.empty());
+            when(tarjetaCreditoRepository.save(nuevaPrincipal)).thenReturn(nuevaPrincipal);
+            when(tarjetaCreditoMapper.toResponse(nuevaPrincipal)).thenReturn(response);
+
+            TarjetaCreditoDTOResponse result = userService.cambiarTarjetaPrincipal(1, 2);
+
+            assertThat(result).isEqualTo(response);
+            assertThat(nuevaPrincipal.getEsPrincipal()).isTrue();
         }
     }
 
