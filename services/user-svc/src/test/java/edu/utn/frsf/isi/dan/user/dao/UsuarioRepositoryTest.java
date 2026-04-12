@@ -63,7 +63,7 @@ class UsuarioRepositoryTest {
         propietario1.setEmail("jclopez@email.com");
         propietario1.setTelefono("3411111111");
         propietario1.setDni("11223344");
-        propietario1.setIdHotel(1L);
+        propietario1.setIdHotel(1);
 
         huespedRepository.save(huesped1);
         huespedRepository.save(huesped2);

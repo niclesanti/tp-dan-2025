@@ -1,5 +1,6 @@
 package edu.utn.frsf.isi.dan.gestion.model;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -25,11 +26,12 @@ public class Hotel {
     private String telefono;
     private String correoContacto;
     private Integer categoria;
+    private LocalDate fechaCierre;
+
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "hotel")
     @JsonIgnore
     private List<Habitacion> habitaciones;
-    
+
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "hotel")
     private List<AmenityHotel> amenities;
-
 }

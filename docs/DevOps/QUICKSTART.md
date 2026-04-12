@@ -8,14 +8,17 @@
 - **docker-compose.prod.yml** - Configuración de producción
 
 ### 🔧 Archivos de Configuración
-- **.env** - Variables de entorno para desarrollo
+- **.env** - Variables de entorno para desarrollo (MySQL, PostgreSQL, RabbitMQ, PgAdmin)
 - **.env.prod.template** - Template para configuración de producción
 - **services/user-svc/Dockerfile** - Multi-stage build optimizado
 - **services/user-svc/.dockerignore** - Optimización de contexto de build
+- **services/gestion-svc/Dockerfile** - Multi-stage build con soporte multi-módulo (`-am`)
+- **services/reservas-svc/Dockerfile** - Multi-stage build con soporte multi-módulo (`-am`)
 
 ### 📝 Perfiles de Spring Boot
-- **application-dev.properties** - Perfil de desarrollo
-- **application-prod.properties** - Perfil de producción
+- **application-dev.properties** - Perfil de desarrollo (user-svc, gestion-svc y reservas-svc)
+- **application-prod.properties** - Perfil de producción (user-svc, gestion-svc y reservas-svc)
+- **application-local.properties** - Perfil para correr desde IDE (localhost)
 
 ### 📚 Documentación
 - **DOCKER-README.md** - Guía completa de Docker
@@ -63,27 +66,50 @@ Una vez levantados, accede a:
 
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
-| **API REST** | http://localhost:8081 | Endpoints de user-svc |
-| **Swagger UI** | http://localhost:8081/swagger-ui | Documentación interactiva |
+| **user-svc API** | http://localhost:8081 | Endpoints de gestión de usuarios |
+| **user-svc Swagger** | http://localhost:8081/swagger-ui | Documentación interactiva user-svc |
+| **gestion-svc API** | http://localhost:8083 | Endpoints de hoteles, habitaciones y tarifas |
+| **gestion-svc Swagger** | http://localhost:8083/swagger-ui | Documentación interactiva gestion-svc |
+| **reservas-svc API** | http://localhost:8082 | Endpoints de reservas y huéspedes |
+| **reservas-svc Swagger** | http://localhost:8082/swagger-ui | Documentación interactiva reservas-svc |
 | **PHPMyAdmin** | http://localhost:6080 | Administración MySQL |
-| **Health Check** | http://localhost:8081/actuator/health | Estado del servicio |
+| **PgAdmin** | http://localhost:6081 | Administración PostgreSQL |
+| **Mongo Express** | http://localhost:6091 | Administración MongoDB |
+| **RabbitMQ UI** | http://localhost:15672 | Consola de mensajería |
 
 ### Credenciales MySQL (Desarrollo)
-- **Usuario**: `usr_app`
-- **Password**: `usrapp`
-- **Base de datos**: `users`
+- **Usuario**: `usr_app` / **Password**: `usrapp` / **BD**: `users`
+
+### Credenciales PostgreSQL (Desarrollo)
+- **Usuario**: `appuser` / **Password**: `apppwd` / **BD**: `appdb` / **Puerto host**: `5433`
+
+### Credenciales RabbitMQ (Desarrollo)
+- **Usuario**: `admin` / **Password**: `admin`
+
+### Credenciales MongoDB (Desarrollo)
+- **Usuario**: `root` / **Password**: `rootpwd` / **BD**: `reservas` / **Puerto host**: `27017`
+
+### Credenciales Mongo Express (Desarrollo)
+- Acceso sin autenticación (solo desarrollo)
+
+### Credenciales PgAdmin (Desarrollo)
+- **Email**: `admin@admin.com` / **Password**: `admin`
 
 ## 📊 Verificar que todo funciona
 
 ```powershell
-# Ver estado de los servicios
+# Ver estado de todos los servicios
 docker compose ps
 
 # Verificar salud de user-svc
 curl http://localhost:8081/actuator/health
 
+# Verificar salud de gestion-svc (DB + RabbitMQ)
+curl http://localhost:8083/actuator/health
+
 # Ver logs en tiempo real
 docker compose logs -f user-svc
+docker compose logs -f gestion-svc
 ```
 
 ## 🔧 Características por Perfil
@@ -152,13 +178,16 @@ docker compose up -d --build
 ## ✨ Próximos Pasos
 
 1. ✅ Levantar los servicios: `docker compose up -d --build`
-2. ✅ Verificar acceso a http://localhost:8081/swagger-ui
-3. ✅ Implementar endpoints faltantes según [ETAPA01.md](./ETAPA01.md)
+2. ✅ Verificar acceso a http://localhost:8081/swagger-ui (user-svc)
+3. ✅ Verificar acceso a http://localhost:8083/swagger-ui (gestion-svc)
 4. ✅ Probar con PHPMyAdmin: http://localhost:6080
+5. ✅ Probar con PgAdmin: http://localhost:6081
+6. ✅ Probar RabbitMQ Management UI: http://localhost:15672
+7. ⬜ Implementar reservas-svc
 
 ---
 
 💡 **Tip**: Si usas VSCode, instala la extensión "Docker" para gestionar contenedores visualmente.
 
 🎓 **Proyecto**: TP DAN 2025 - Sistema de Gestión Hotelera  
-📅 **Etapa**: 1 - Servicio de Usuarios
+📅 **Etapa**: 2 - user-svc + gestion-svc

@@ -32,7 +32,7 @@ public record PropietarioDTOUpdate (
         String dni,
 
         @Positive(message = "El ID del hotel debe ser un número positivo")
-        Long idHotel
+        Integer idHotel
 ) {
 
 }

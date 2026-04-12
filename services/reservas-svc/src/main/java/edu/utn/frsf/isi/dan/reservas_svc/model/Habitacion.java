@@ -15,7 +15,7 @@ import java.util.List;
 public class Habitacion {
     @Id
     private String id;
-    private Long habitacionId;
+    private Integer habitacionId;
     private Integer capacidad;
     private Double precioNoche;
     private List<String> amenities;

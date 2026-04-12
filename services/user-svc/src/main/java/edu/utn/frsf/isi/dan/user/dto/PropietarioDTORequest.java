@@ -33,9 +33,9 @@ public record PropietarioDTORequest(
         @Valid
         CuentaBancariaDTORequest cuentaBancaria,
 
-        //@NotNull(message = "El ID del hotel es obligatorio")
+        @NotNull(message = "El ID del hotel es obligatorio")
         @Positive(message = "El ID del hotel debe ser un número positivo")
-        Long idHotel
+        Integer idHotel
 ) {
 
 }

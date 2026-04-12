@@ -6,7 +6,7 @@ Sistema de Gestión Hotelera con arquitectura de microservicios.
 
 - [Docker Desktop](https://docs.docker.com/desktop/) (Windows/Mac) o Docker Engine (Linux)
 - [Docker Compose](https://docs.docker.com/compose/install/) v2.0+
-- Puertos disponibles: `3306`, `5005`, `6080`, `8081`
+- Puertos disponibles: `3306`, `5005`, `5006`, `5007`, `5433`, `5672`, `6080`, `6081`, `6091`, `8081`, `8082`, `8083`, `15672`, `27017`
 
 ## 🚀 Inicio Rápido
 
@@ -24,10 +24,16 @@ docker compose logs -f user-svc
 ```
 
 Servicios disponibles:
-- **API REST (user-svc)**: http://localhost:8081
-- **Swagger UI**: http://localhost:8081/swagger-ui
+- **user-svc API**: http://localhost:8081 (debug: 5005)
+- **user-svc Swagger**: http://localhost:8081/swagger-ui
+- **gestion-svc API**: http://localhost:8083 (debug: 5006)
+- **gestion-svc Swagger**: http://localhost:8083/swagger-ui
+- **reservas-svc API**: http://localhost:8082 (debug: 5007)
+- **reservas-svc Swagger**: http://localhost:8082/swagger-ui
 - **PHPMyAdmin**: http://localhost:6080
-- **Debug remoto**: Puerto 5005
+- **PgAdmin**: http://localhost:6081
+- **Mongo Express**: http://localhost:6091
+- **RabbitMQ UI**: http://localhost:15672
 
 ### Producción
 
@@ -43,17 +49,30 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 ## 🏗️ Arquitectura
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Docker Network                     │
-│                 tp-dan-network                      │
-│                                                     │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────┐ │
-│  │   MySQL     │  │  PHPMyAdmin  │  │  user-svc │ │
-│  │   :3306     │◄─┤    :6080     │  │   :8081   │ │
-│  └─────────────┘  └──────────────┘  └───────────┘ │
-│       ▲                                    │        │
-│       └────────────────────────────────────┘        │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Docker Network (tp-dan-network)              │
+│                                                                      │
+│  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────────┐  │
+│  │  MySQL   │  │PHPMyAdmin │  │ user-svc │  │   RabbitMQ       │  │
+│  │  :3306   │◄─┤  :6080    │  │  :8081   │  │ :5672 / :15672   │  │
+│  └──────────┘  └───────────┘  └──────────┘  └──────────────────┘  │
+│       ▲                            │                 ▲    ▲         │
+│       └────────────────────────────┘                 │    │         │
+│                                                       │    │         │
+│  ┌──────────┐  ┌───────────┐  ┌────────────────────────────────┐  │
+│  │PostgreSQL│  │  PgAdmin  │  │         gestion-svc            │  │
+│  │  :5432   │◄─┤  :6081    │  │  :8083  (PostgreSQL+RabbitMQ)  │  │
+│  └──────────┘  └───────────┘  └────────────────────────────────┘  │
+│       ▲                                    │         │              │
+│       └────────────────────────────────────┘         │              │
+│                                                       │              │
+│  ┌──────────┐  ┌───────────┐  ┌────────────────────────────────┐  │
+│  │ MongoDB  │  │  Mongo    │  │         reservas-svc           │  │
+│  │ :27017   │◄─┤ Express   │  │  :8082   (MongoDB+RabbitMQ)    │  │
+│  └──────────┘  │  :6091    │  └────────────────────────────────┘  │
+│                └───────────┘               │         │              │
+│                                            └─────────┘              │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## 📁 Estructura de Archivos
@@ -66,12 +85,27 @@ tp-dan-2025/
 ├── .env                         # 🔧 Variables de entorno (desarrollo)
 ├── .env.prod.template           # 📝 Template para producción
 ├── services/
-│   └── user-svc/
-│       ├── Dockerfile           # 🐋 Multi-stage build optimizado
+│   ├── user-svc/
+│   │   ├── Dockerfile               # 🐋 Multi-stage build (contexto raíz)
+│   │   └── src/main/resources/
+│   │       ├── application.properties
+│   │       ├── application-dev.properties
+│   │       ├── application-prod.properties
+│   │       └── application-local.properties
+│   └── gestion-svc/
+│       ├── Dockerfile               # 🐋 Multi-stage build multi-módulo (-am)
 │       └── src/main/resources/
 │           ├── application.properties
 │           ├── application-dev.properties
-│           └── application-prod.properties
+│           ├── application-prod.properties
+│           └── application-local.properties
+│   └── reservas-svc/
+│       ├── Dockerfile               # 🐋 Multi-stage build multi-módulo (-am)
+│       └── src/main/resources/
+│           ├── application.properties
+│           ├── application-dev.properties
+│           ├── application-prod.properties
+│           └── application-local.properties
 └── infra/
     └── mysql/
         └── initdb/              # 📊 Scripts de inicialización DB
@@ -216,7 +250,10 @@ docker compose up -d --build
 | Volumen | Descripción | Localización |
 |---------|-------------|--------------|
 | `mysql_data` | Base de datos MySQL | Docker volume |
-| `./services/user-svc/logs` | Logs de aplicación | Host filesystem |
+| `postgres_data` | Base de datos PostgreSQL | Docker volume |
+| `pgadmin_data` | Configuración PgAdmin | Docker volume |
+| `./services/user-svc/logs` | Logs de user-svc | Host filesystem |
+| `./services/gestion-svc/logs` | Logs de gestion-svc | Host filesystem |
 
 ```bash
 # Ver información de volúmenes

@@ -51,7 +51,7 @@ public final class TestDataFactory {
         p.setEmail("maria.garcia@email.com");
         p.setTelefono("3419876543");
         p.setDni("87654321");
-        p.setIdHotel(10L);
+        p.setIdHotel(10);
         p.setCuentaBancaria(cuentaBancaria());
         return p;
     }
@@ -163,7 +163,7 @@ public final class TestDataFactory {
                 "3419876543",
                 "87654321",
                 cuentaBancariaDTORequest(),
-                10L
+                10
         );
     }
 
@@ -173,7 +173,7 @@ public final class TestDataFactory {
                 "maria.actualizada@email.com",
                 "3411111111",
                 "87654321",
-                20L
+                20
         );
     }
 
@@ -226,7 +226,7 @@ public final class TestDataFactory {
                 "3419876543",
                 "87654321",
                 cuentaBancariaDTOResponse(),
-                10L
+                10
         );
     }
 

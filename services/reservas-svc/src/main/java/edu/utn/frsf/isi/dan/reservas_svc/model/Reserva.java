@@ -17,15 +17,14 @@ public class Reserva {
     @Id
     private String _id;
     private String idHabitacion;
-    private Long hotelId;
+    private Integer hotelId;
     private Instant createdAt;
     private Instant checkIn;
     private Instant checkOut;
     private Double precioNoche;
     private Double precioTotal;
-    private String status;
     private Huesped huesped;
-    private List<Pago> pago;
+    private List<Pago> pagos;
     private Review clientReview;
     private Review hostReview;
     private EstadoReserva estadoReserva;

@@ -7,7 +7,7 @@ public record PropietarioDTOResponse(
         String telefono,
         String dni,
         CuentaBancariaDTOResponse cuentaBancaria,
-        Long idHotel
+        Integer idHotel
 ) {
 
 }
