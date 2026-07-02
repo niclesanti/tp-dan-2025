@@ -25,6 +25,7 @@ COPY common/dan-common-lib/pom.xml ./common/dan-common-lib/
 COPY services/gestion-svc/pom.xml ./services/gestion-svc/
 COPY services/user-svc/pom.xml ./services/user-svc/
 COPY services/reservas-svc/pom.xml ./services/reservas-svc/
+COPY common/dan-spring-gateway/pom.xml ./common/dan-spring-gateway/
 
 # Descargar dependencias del árbol gestion-svc + dan-common-lib
 RUN ./mvnw dependency:go-offline -pl services/gestion-svc -am -B || true
