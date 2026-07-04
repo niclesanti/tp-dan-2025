@@ -16,7 +16,7 @@ services:
   # ── MySQL (Development) ─────────────────────────────────────────
   mysql:
     ports:
-      - "3306:3306"  # Exponer para conexión directa desde IDE
+      - "3307:3306"  # Exponer para conexión directa desde IDE (3306 usado por Docker Desktop)
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -64,8 +64,8 @@ services:
   # ── RabbitMQ (Development) ────────────────────────────────────
   rabbitmq:
     ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # Management UI: http://localhost:15672
+      - "5673:5672"    # AMQP (5672 usado por Docker Desktop)
+      - "15673:15672"  # Management UI: http://localhost:15673
     logging:
       driver: "json-file"
       options:
@@ -114,7 +114,7 @@ services:
   # ── MongoDB (Development) ──────────────────────────────────────
   mongodb:
     ports:
-      - "27017:27017"  # Exponer para conexión directa desde IDE
+      - "27018:27017"  # Exponer para conexión directa desde IDE (27017 usado por Docker Desktop)
     logging:
       driver: "json-file"
       options:
@@ -144,6 +144,18 @@ services:
         -Xdebug
     volumes:
       - ./services/reservas-svc/logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── API Gateway (Development) ─────────────────────────────────
+  dan-gateway:
+    ports:
+      - "8080:8080"  # API Gateway: http://localhost:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
     logging:
       driver: "json-file"
       options:
