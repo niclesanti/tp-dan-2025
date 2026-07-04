@@ -111,7 +111,8 @@ services:
 
   user-svc:
     build:
-      context: ../services/user-svc
+      context: ../
+      dockerfile: services/user-svc/Dockerfile
     container_name: user-svc
     restart: unless-stopped
     ports:
@@ -125,7 +126,8 @@ services:
 
   reservas-svc:
     build:
-      context: ../services/reservas-svc
+      context: ../
+      dockerfile: services/reservas-svc/Dockerfile
     container_name: reservas-svc
     restart: unless-stopped
     ports:
@@ -138,7 +140,8 @@ services:
 
   gestion-svc:
     build:
-      context: ../services/gestion-svc
+      context: ../
+      dockerfile: services/gestion-svc/Dockerfile
     container_name: gestion-svc
     restart: unless-stopped
     ports:
@@ -149,7 +152,20 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: default
 
-
+  dan-spring-gateway:
+    build:
+      context: ../
+      dockerfile: common/dan-spring-gateway/Dockerfile
+    container_name: dan-spring-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-svc
+      - reservas-svc
+      - gestion-svc
+    environment:
+      SPRING_PROFILES_ACTIVE: default
 
 volumes:
   mysql_data:

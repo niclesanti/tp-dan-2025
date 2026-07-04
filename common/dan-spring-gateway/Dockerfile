@@ -1,6 +1,6 @@
 # ╔════════════════════════════════════════════════════════╗
-# ║ Multi-Stage Dockerfile para reservas-svc              ║
-# ║ Stage 1: Build con Maven (multi-módulo -am)           ║
+# ║ Multi-Stage Dockerfile para dan-spring-gateway        ║
+# ║ Stage 1: Build con Maven (standalone)                 ║
 # ║ Stage 2: Runtime con JRE Alpine (optimizado)          ║
 # ║                                                        ║
 # ║ NOTA: El contexto debe ser la raíz del proyecto       ║
@@ -11,47 +11,40 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /workspace
 
-# Copiar mvnw y wrapper raíz (ejecuta el build multi-módulo)
-COPY mvnw ./
-COPY .mvn ./.mvn/
-# Convertir CRLF → LF (necesario cuando el repo viene de Windows)
-RUN chmod +x mvnw && sed -i 's/\r$//' mvnw
-
-# Copiar POMs para cachear dependencias antes de copiar fuentes
-# Se copian TODOS los pom.xml del reactor para que Maven pueda resolver el árbol
-# de módulos sin errores, aunque solo se compilen reservas-svc y dan-common-lib
+# Copiar POMs
 COPY pom.xml ./
-COPY common/dan-common-lib/pom.xml ./common/dan-common-lib/
-COPY services/reservas-svc/pom.xml ./services/reservas-svc/
-COPY services/user-svc/pom.xml ./services/user-svc/
-COPY services/gestion-svc/pom.xml ./services/gestion-svc/
 COPY common/dan-spring-gateway/pom.xml ./common/dan-spring-gateway/
+COPY common/dan-spring-gateway/mvnw ./common/dan-spring-gateway/
+COPY common/dan-spring-gateway/.mvn ./common/dan-spring-gateway/.mvn/
 
-# Descargar dependencias del árbol reservas-svc + dan-common-lib
-RUN ./mvnw dependency:go-offline -pl services/reservas-svc -am -B || true
+# Convertir CRLF → LF y dar permisos de ejecución
+RUN chmod +x common/dan-spring-gateway/mvnw && sed -i 's/\r$//' common/dan-spring-gateway/mvnw
+
+# Descargar dependencias (se cachea si los POMs no cambian)
+WORKDIR /workspace/common/dan-spring-gateway
+RUN ./mvnw dependency:go-offline -B || true
 
 # Copiar código fuente
-COPY common/dan-common-lib/src ./common/dan-common-lib/src
-COPY services/reservas-svc/src ./services/reservas-svc/src
+COPY common/dan-spring-gateway/src ./src
 
-# Compilar aplicación (también construye dan-common-lib con -am)
-RUN ./mvnw clean package -DskipTests -B -pl services/reservas-svc -am
+# Compilar aplicación
+RUN ./mvnw clean package -DskipTests -B
 
 # ── STAGE 2: Runtime ──────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine
 
 # Metadata
 LABEL maintainer="tp-dan-2025"
-LABEL service="reservas-svc"
+LABEL service="dan-spring-gateway"
 LABEL version="1.0.0"
 
-# Crear usuario no-root para seguridad
+# Crear usuario no-root
 RUN addgroup -S spring && adduser -S spring -G spring
 
 WORKDIR /app
 
 # Copiar JAR desde stage de build
-COPY --from=builder /workspace/services/reservas-svc/target/*.jar app.jar
+COPY --from=builder /workspace/common/dan-spring-gateway/target/*.jar app.jar
 
 # Cambiar ownership
 RUN chown spring:spring app.jar
