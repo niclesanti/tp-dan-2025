@@ -136,10 +136,9 @@ services:
     build:
       context: .
       dockerfile: services/user-svc/Dockerfile
-    container_name: tp-dan-user-svc
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
       MYSQL_HOST: mysql
       MYSQL_DATABASE: ${MYSQL_DATABASE:-users}
       MYSQL_USER: ${MYSQL_USER:-usr_app}
@@ -149,6 +148,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -161,10 +162,9 @@ services:
     build:
       context: .
       dockerfile: services/gestion-svc/Dockerfile
-    container_name: tp-dan-gestion-svc
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
       POSTGRES_HOST: postgres
       POSTGRES_DB: ${POSTGRES_DB:-appdb}
       POSTGRES_USER: ${POSTGRES_USER:-appuser}
@@ -179,6 +179,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -228,10 +230,9 @@ services:
     build:
       context: .
       dockerfile: services/reservas-svc/Dockerfile
-    container_name: tp-dan-reservas-svc
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
       MONGO_HOST: mongodb
       MONGO_USER: ${MONGO_USER:-root}
       MONGO_PASSWORD: ${MONGO_PASSWORD:-rootpwd}
@@ -246,6 +247,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -253,15 +256,26 @@ services:
       retries: 3
       start_period: 60s
 
+  # ── Eureka Server ─────────────────────────────────────────────
+  dan-eureka-server:
+    build:
+      context: .
+      dockerfile: common/dan-eureka-server/Dockerfile
+    container_name: dan-eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - tp-dan-network
+
   # ── API Gateway ───────────────────────────────────────────────
   dan-gateway:
     build:
       context: .
       dockerfile: common/dan-spring-gateway/Dockerfile
-    container_name: tp-dan-gateway
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
     networks:
       - tp-dan-network
     depends_on:
@@ -271,6 +285,8 @@ services:
         condition: service_healthy
       gestion-svc:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
