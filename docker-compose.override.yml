@@ -158,3 +158,30 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # ── OpenTelemetry Collector (Development) ─────────────────────
+  otel-collector:
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus exporter metrics
+
+  # ── Tempo (Development) ──────────────────────────────────────
+  tempo:
+    ports:
+      - "3200:3200"   # Tempo API
+
+  # ── Loki (Development) ───────────────────────────────────────
+  loki:
+    ports:
+      - "3100:3100"   # Loki API
+
+  # ── Prometheus (Development) ─────────────────────────────────
+  prometheus:
+    ports:
+      - "9090:9090"   # Prometheus UI
+
+  # ── Grafana (Development) ────────────────────────────────────
+  grafana:
+    ports:
+      - "3000:3000"   # Grafana UI: http://localhost:3000
