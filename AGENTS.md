@@ -10,6 +10,8 @@ Hotel reservation microservice system. Maven multi-module (Spring Boot 3.5, Java
 | `gestion-svc` | `services/gestion-svc` | PostgreSQL (JPA+JDBC) | RabbitMQ publisher |
 | `reservas-svc` | `services/reservas-svc` | MongoDB (Spring Data) | RabbitMQ consumer |
 | `dan-common-lib` | `common/dan-common-lib` | — | Shared DTOs/events |
+| `dan-spring-gateway` | `common/dan-spring-gateway` | — | Spring Cloud Gateway MVC |
+| `dan-eureka-server` | `common/dan-eureka-server` | — | Netflix Eureka |
 
 ## Quick commands
 
@@ -35,6 +37,8 @@ make test
 - **user-svc** (`:8081`): Users (huésped/propietario), credit cards, banks — CRUD via REST
 - **gestion-svc** (`:8083`): Hotels, rooms, rates — publishes events to RabbitMQ exchange `dan.exchange` with routing key `dan.habitacion.#`
 - **reservas-svc** (`:8082`): Room search, reservation lifecycle, payments — consumes RabbitMQ events (`spring.amqp.deserialization.trust.all=true`)
+- **dan-spring-gateway** (`:8080`): API Gateway, routes requests to services via `lb://service-name` when Eureka is active
+- **dan-eureka-server** (`:8761`): Service discovery — start before other services
 - **dan-common-lib**: DTOs (`HotelDTO`, `HabitacionDTO`, `TarifaDTO`) and events (`HabitacionEvent`, `HotelCierreEvent`) — must be compiled first for dependent services
 
 ## Key gotchas
@@ -44,12 +48,15 @@ make test
 - **CRLF→LF** — their Dockerfiles run `sed -i 's/\r$//' mvnw` to fix Windows line endings
 - **.env is gitignored** — never commit it; use `.env.prod.template` for production
 - **`.env` values used by docker compose** — MYSQL_*, POSTGRES_*, RABBITMQ_*, MONGO_* env vars defined there
+- **All services expose8080 internally** — Docker maps to host ports via `docker-compose.override.yml`
+- **Default profile is `dev,eureka`** — services register with Eureka; gateway routes via `lb://`
 
 ## Testing
 
 - JaCoCo enforces **95% branch coverage** on `**/controller/*` and `**/service/*` in every service — `mvn test` will fail if coverage drops below threshold
 - Testcontainers used for MySQL, PostgreSQL, MongoDB, RabbitMQ integration tests
 - H2 used in some test scopes as lightweight alternative
+- Test profile uses `create-drop` DDL (separate from main `none` setting)
 
 ## Profiles
 
@@ -61,21 +68,36 @@ make test
 
 ## Ports (development)
 
-| Service | Host port |
-|---------|-----------|
-| user-svc API | 8081 |
-| reservas-svc API | 8082 |
-| gestion-svc API | 8083 |
-| PHPMyAdmin | 6080 |
-| PgAdmin | 6081 |
-| Mongo Express | 6091 |
-| RabbitMQ UI | 15672 |
-| Debug (each svc) | 5005 / 5006 / 5007 |
+Dev ports come from `docker-compose.override.yml` (auto-applied with `docker compose up`).
 
-RabbitMQ AMQP port 5672, MySQL 3306, PostgreSQL 5433, MongoDB 27017.
+| Service | Host port | Internal port |
+|---------|-----------|---------------|
+| Gateway | 8080 | 8080 |
+| user-svc API | 8081 | 8080 |
+| reservas-svc API | 8082 | 8080 |
+| gestion-svc API | 8083 | 8080 |
+| Eureka Server | 8761 | 8761 |
+| PHPMyAdmin | 6080 | — |
+| PgAdmin | 6081 | — |
+| Mongo Express | 6091 | — |
+| RabbitMQ AMQP | 5673 | 5672 |
+| RabbitMQ UI | 15673 | 15672 |
+| MySQL | 3307 | 3306 |
+| PostgreSQL | 5433 | 5432 |
+| MongoDB | 27018 | 27017 |
+| Debug (each svc) | 5005 | 5005 |
+| **Observability** | | |
+| Grafana | 3000 | 3000 |
+| Prometheus | 9090 | 9090 |
+| Tempo | 3200 | 3200 |
+| Loki | 3100 | 3100 |
+| OTel Collector (OTLP HTTP) | 4318 | 4318 |
+| OTel Collector (OTLP gRPC) | 4317 | 4317 |
+| OTel Collector (Prometheus) | 8889 | 8889 |
 
 ## Code conventions
 
 - **MapStruct + Lombok**: annotation processors configured in `maven-compiler-plugin` (`lombok`, `mapstruct-processor`, `lombok-mapstruct-binding`)
 - `spring.jpa.hibernate.ddl-auto=none` — schema managed via init SQL scripts in `infra/<db>/initdb/`
 - RabbitMQ exchange and routing key configured per service via `rabbitmq.exchange` and `rabbitmq.routingkey` properties
+- Observability: OpenTelemetry → OTLP exporter, with Grafana/Loki/Tempo/Prometheus stack (see ETAPA05-OBSERVABILIDAD.md)

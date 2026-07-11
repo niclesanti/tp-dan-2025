@@ -22,17 +22,20 @@ distributor:
         grpc:
           endpoint: 0.0.0.0:4317
 
-ingester:
-  trace_idle_period: 10s
-  max_block_bytes: 1_000_000
-  max_block_duration: 5m
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
 
-compactor:
-  compaction:
-    compaction_window: 1h
-    max_compaction_objects: 1000000
-    block_retention: 1h
-    compacted_block_retention: 10m
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
 
 storage:
   trace:

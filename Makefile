@@ -6,7 +6,7 @@
 # ║ Ejemplo: make dev-up                                              ║
 # ╚════════════════════════════════════════════════════════════════════╝
 
-.PHONY: help dev-up dev-down prod-up prod-down logs status clean rebuild shell-user shell-mysql db-backup db-restore test
+.PHONY: help dev-up dev-down prod-up prod-down logs status clean rebuild shell-user shell-mysql db-backup db-restore test test-observabilidad test-obs
 
 # Colores para output
 BLUE := \033[0;34m
@@ -167,6 +167,15 @@ test:
 	@echo "$(GREEN)🧪 Ejecutando tests...$(NC)"
 	cd services/user-svc && ./mvnw test
 	@echo "$(GREEN)✅ Tests completados$(NC)"
+
+## test-observabilidad: Ejecutar tests de observabilidad E2E
+test-observabilidad:
+	@echo "$(GREEN)🔭 Ejecutando tests de observabilidad...$(NC)"
+	pwsh -NoProfile -ExecutionPolicy Bypass -File infra/test-observabilidad.ps1
+	@echo "$(GREEN)✅ Tests de observabilidad completados$(NC)"
+
+## test-obs: Alias rápido para test-observabilidad
+test-obs: test-observabilidad
 
 ## health: Verificar health de servicios
 health:
