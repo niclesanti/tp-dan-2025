@@ -12,6 +12,7 @@ Hotel reservation microservice system. Maven multi-module (Spring Boot 3.5, Java
 | `dan-common-lib` | `common/dan-common-lib` | — | Shared DTOs/events |
 | `dan-spring-gateway` | `common/dan-spring-gateway` | — | Spring Cloud Gateway MVC |
 | `dan-eureka-server` | `common/dan-eureka-server` | — | Netflix Eureka |
+| `frontend` | `frontend/` | — | React SPA (Vite + Tailwind) |
 
 ## Quick commands
 
@@ -40,6 +41,7 @@ make test
 - **dan-spring-gateway** (`:8080`): API Gateway, routes requests to services via `lb://service-name` when Eureka is active
 - **dan-eureka-server** (`:8761`): Service discovery — start before other services
 - **dan-common-lib**: DTOs (`HotelDTO`, `HabitacionDTO`, `TarifaDTO`) and events (`HabitacionEvent`, `HotelCierreEvent`) — must be compiled first for dependent services
+- **frontend** (`:5173`): React SPA (Vite + Tailwind + shadcn/ui) — served via nginx in Docker, multi-stage build
 
 ## Key gotchas
 
@@ -72,6 +74,7 @@ Dev ports come from `docker-compose.override.yml` (auto-applied with `docker com
 
 | Service | Host port | Internal port |
 |---------|-----------|---------------|
+| **Frontend** | 5173 | 80 |
 | Gateway | 8080 | 8080 |
 | user-svc API | 8081 | 8080 |
 | reservas-svc API | 8082 | 8080 |
