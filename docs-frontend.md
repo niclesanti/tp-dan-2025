@@ -15,7 +15,7 @@ La arquitectura del frontend se ha definido bajo el paradigma de una **Single Pa
 
 ### 2. Interfaz de Usuario (UI / UX)
 * **Tailwind CSS 3.4+:** Framework de CSS basado en clases utilitarias integradas directamente en el código JSX, agilizando drásticamente el maquetado sin necesidad de archivos de estilos globales complejos.
-* **shadcn/ui (Radix UI):** Colección de componentes accesibles y personalizables que se copian y pegan directamente en el proyecto, ofreciendo un control total sobre el código fuente generado por la IA.
+* **shadcn/ui (Radix UI):** Colección de componentes accesibles y personalizables que se copian y pegan directamente en el proyecto, ofreciendo un control total sobre el código fuente generado por la IA. Se usará el estilo "Vega" (Lucide - Inter).
 * **Lucide React:** Set de iconos limpios, consistentes y vectoriales (SVG) optimizados para React.
 
 ### 3. Gestión de Estado y Datos

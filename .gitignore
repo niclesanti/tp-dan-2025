@@ -40,5 +40,10 @@ services/*/logs/
 # ── OS ────────────────────────────────────────────────────────────
 Thumbs.db
 
+# ── MCP shadcn (artifacts de OpenCode en raíz) ─────────────────────
+node_modules/
+package.json
+package-lock.json
+
 # IA
 prompt.md
