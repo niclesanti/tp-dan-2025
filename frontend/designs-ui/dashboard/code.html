@@ -1,0 +1,352 @@
+<!DOCTYPE html><html class="dark" lang="es" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>DAN Hotel SaaS - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#e4e2e1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-tint": "#c6c6c7",
+                        "secondary-container": "#474746",
+                        "surface-container-highest": "#343535",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "primary-fixed": "#e2e2e2",
+                        "surface-dim": "#121414",
+                        "on-tertiary": "#32302d",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#676460",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "on-primary": "#2f3131",
+                        "inverse-primary": "#5d5f5f",
+                        "primary": "#ffffff",
+                        "on-primary-container": "#636565",
+                        "on-surface-variant": "#c4c7c8",
+                        "tertiary-fixed": "#e7e1dd",
+                        "outline": "#8e9192",
+                        "on-tertiary-fixed-variant": "#494643",
+                        "inverse-on-surface": "#2f3131",
+                        "on-surface": "#e3e2e2",
+                        "secondary": "#c8c6c5",
+                        "surface-container-low": "#1a1c1c",
+                        "inverse-surface": "#e3e2e2",
+                        "tertiary-fixed-dim": "#cbc6c1",
+                        "tertiary": "#ffffff",
+                        "surface": "#121414",
+                        "outline-variant": "#444748",
+                        "surface-container": "#1e2020",
+                        "surface-container-high": "#292a2a",
+                        "tertiary-container": "#e7e1dd",
+                        "on-error-container": "#ffdad6",
+                        "surface-bright": "#38393a",
+                        "on-secondary-container": "#b7b5b4",
+                        "primary-fixed-dim": "#c6c6c7",
+                        "primary-container": "#e2e2e2",
+                        "background": "#121414",
+                        "surface-container-lowest": "#0d0e0f",
+                        "on-tertiary-fixed": "#1d1b19",
+                        "on-background": "#e3e2e2",
+                        "on-primary-fixed-variant": "#454747",
+                        "surface-variant": "#343535",
+                        "on-secondary": "#303030",
+                        "on-primary-fixed": "#1a1c1c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "12px",
+                        "base": "4px",
+                        "margin-edge": "24px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "xs": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "title-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Minimalist Dark Mode base styles for high density */
+        body {
+            background-color: #0a0a0a;
+            color: #fafafa;
+        }
+        .card-surface {
+            background-color: #141414;
+            border: 1px solid #262626;
+        }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-[#fafafa] font-body-md text-body-md h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-surface text-primary dark:text-primary h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline-variant flex flex-col h-full py-lg px-md z-20 hidden md:flex">
+<!-- Brand / Header -->
+<div class="mb-xl flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="business">business</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary text-xl">DAN Hotel</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant">SaaS Management</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto space-y-base">
+<a class="flex items-center gap-sm px-sm py-xs rounded-md bg-secondary-container dark:bg-secondary-container text-on-secondary-container font-semibold opacity-90 transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-md text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-body-md text-body-md">Reservas</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-md text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="hotel">hotel</span>
+<span class="font-body-md text-body-md">Hoteles &amp; Habitaciones</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-md text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body-md text-body-md">Tarifas</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-md text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md text-body-md">Propietarios &amp; Huéspedes</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-md text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+<span class="font-body-md text-body-md">Bancos</span>
+</a>
+</div>
+<!-- Footer Links -->
+<div class="mt-auto pt-lg border-t border-outline-variant space-y-base">
+
+<a class="flex items-center gap-sm px-sm py-xs rounded-md text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md text-body-md">Cerrar Sesión</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 h-screen bg-[#0a0a0a]">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface text-primary dark:text-primary border-b border-outline-variant dark:border-outline-variant w-full h-16 px-lg sticky top-0 flex justify-between items-center z-10">
+<!-- Mobile Menu Toggle (Visible only on mobile) -->
+<button class="md:hidden text-on-surface-variant mr-sm">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<!-- Title & Search (Left aligned as per JSON) -->
+<div class="flex items-center gap-lg flex-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant hidden sm:block">App &gt; Dashboard</span>
+<div class="relative max-w-md w-full ml-auto md:ml-0">
+
+
+</div>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-sm ml-lg shrink-0">
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors hover:scale-95 transition-transform rounded-full">
+
+</button>
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors hover:scale-95 transition-transform rounded-full hidden sm:block">
+
+</button>
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors hover:scale-95 transition-transform rounded-full hidden sm:block">
+
+</button>
+<div class="w-px h-6 bg-outline-variant mx-xs hidden sm:block"></div>
+<button class="flex items-center gap-xs ml-xs hover:scale-95 transition-transform group">
+<img alt="Usuario Admin" class="w-8 h-8 rounded-full object-cover border border-outline-variant group-hover:border-primary transition-colors" data-alt="A professional close up portrait of an administrative user in a sleek, dimly lit tech office environment. High contrast lighting with cool tones emphasizing authority and clinical precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGxmWSI-qK7DcyOYkFh2thDAwLNzONZpoI7XV4VI22oSYzR2DcFXbttr74WJOkFpJvbI64Ovg4HoPEJP9H9nP5g2Fg41dLVjPc8saE830uGjgKBdW4buaPaE61qwjIneLIWm0_ZR2avNT6QAA5eHnFULNITloGn46xtcRHjyXkrMBt24YI-YTJ8ne6BrMKaWEgdXe5fNcFdKL-15m7N-pCYuXMyfeUAWC3JP5I5Fm1j7qGX9E4QNN-">
+<span class="font-label-caps text-label-caps font-semibold text-primary hidden lg:block">Perfil</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Dashboard Content -->
+<main class="flex-1 overflow-y-auto p-md lg:p-margin-edge">
+<div class="max-w-7xl mx-auto space-y-lg">
+<!-- Metrics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Card 1 -->
+<div class="card-surface rounded-xl p-md flex flex-col justify-between group hover:bg-[#1c1c1c] transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-caps text-label-caps text-[#a3a3a3]">Total Reservas</span>
+<span class="material-symbols-outlined text-[#525252] group-hover:text-primary transition-colors" data-icon="calendar_today" style="font-size: 18px;">calendar_today</span>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-3xl font-bold font-headline-lg">1,284</span>
+<span class="font-body-sm text-body-sm text-[#10b981] flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up" style="font-size: 14px;">trending_up</span>
+                                +12%
+                            </span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="card-surface rounded-xl p-md flex flex-col justify-between group hover:bg-[#1c1c1c] transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-caps text-label-caps text-[#a3a3a3]">Ocupación Hoy</span>
+<span class="material-symbols-outlined text-[#525252] group-hover:text-primary transition-colors" data-icon="meeting_room" style="font-size: 18px;">meeting_room</span>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-3xl font-bold font-headline-lg">88%</span>
+<span class="font-body-sm text-body-sm text-[#10b981] flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up" style="font-size: 14px;">trending_up</span>
+                                +5%
+                            </span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="card-surface rounded-xl p-md flex flex-col justify-between group hover:bg-[#1c1c1c] transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-caps text-label-caps text-[#a3a3a3]">Ingresos Mensuales</span>
+<span class="material-symbols-outlined text-[#525252] group-hover:text-primary transition-colors" data-icon="attach_money" style="font-size: 18px;">attach_money</span>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-3xl font-bold font-headline-lg">$45,200</span>
+<span class="font-body-sm text-body-sm text-[#10b981] flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up" style="font-size: 14px;">trending_up</span>
+                                +8%
+                            </span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="card-surface rounded-xl p-md flex flex-col justify-between group hover:bg-[#1c1c1c] transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-caps text-label-caps text-[#a3a3a3]">Hoteles Activos</span>
+<span class="material-symbols-outlined text-[#525252] group-hover:text-primary transition-colors" data-icon="domain" style="font-size: 18px;">domain</span>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-3xl font-bold font-headline-lg">12</span>
+<span class="font-body-sm text-body-sm text-[#a3a3a3] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                                Estable
+                            </span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Content -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<!-- Left Column: Actividad Reciente -->
+<div class="lg:col-span-2 card-surface rounded-xl flex flex-col">
+<div class="p-md border-b border-[#262626] flex justify-between items-center">
+<h3 class="font-title-md text-title-md font-semibold text-[#fafafa]">Actividad Reciente</h3>
+<button class="font-label-caps text-label-caps text-[#a3a3a3] hover:text-[#fafafa] transition-colors">Ver todo</button>
+</div>
+<div class="flex-1 p-xs flex flex-col gap-xs">
+<!-- List Item 1 -->
+<div class="p-sm flex items-start gap-sm hover:bg-[#1c1c1c] rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-[#262626] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sm text-[#a3a3a3] group-hover:text-primary" data-icon="login">login</span>
+</div>
+<div class="flex-1">
+<p class="font-body-sm text-body-sm text-[#fafafa]">Check-in realizado en Habitación 204</p>
+<p class="font-label-caps text-label-caps text-[#525252] mt-1">Hace 10 min • Hotel Central</p>
+</div>
+</div>
+<!-- List Item 2 -->
+<div class="p-sm flex items-start gap-sm hover:bg-[#1c1c1c] rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-[#262626] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sm text-[#a3a3a3] group-hover:text-primary" data-icon="person_add">person_add</span>
+</div>
+<div class="flex-1">
+<p class="font-body-sm text-body-sm text-[#fafafa]">Nueva reserva: Juan Pérez (Hab. 301)</p>
+<p class="font-label-caps text-label-caps text-[#525252] mt-1">Hace 45 min • Booking.com</p>
+</div>
+</div>
+<!-- List Item 3 -->
+<div class="p-sm flex items-start gap-sm hover:bg-[#1c1c1c] rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-[#262626] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sm text-[#a3a3a3] group-hover:text-primary" data-icon="check_circle">check_circle</span>
+</div>
+<div class="flex-1">
+<p class="font-body-sm text-body-sm text-[#fafafa]">Pago confirmado: Reserva #10492</p>
+<p class="font-label-caps text-label-caps text-[#525252] mt-1">Hace 2 horas • Tarjeta de Crédito</p>
+</div>
+</div>
+<!-- List Item 4 -->
+<div class="p-sm flex items-start gap-sm hover:bg-[#1c1c1c] rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-[#262626] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sm text-[#a3a3a3] group-hover:text-primary" data-icon="cleaning_services">cleaning_services</span>
+</div>
+<div class="flex-1">
+<p class="font-body-sm text-body-sm text-[#fafafa]">Limpieza finalizada: Habitación 102</p>
+<p class="font-label-caps text-label-caps text-[#525252] mt-1">Hace 3 horas • Equipo B</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Estado del Sistema -->
+<div class="lg:col-span-1 flex flex-col gap-md">
+<div class="card-surface rounded-xl p-md flex-1 flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title-md text-title-md font-semibold text-[#fafafa]">Estado del Sistema</h3>
+<span class="flex items-center gap-1 font-label-caps text-label-caps text-[#10b981] bg-[#10b981]/10 px-2 py-1 rounded-full border border-[#10b981]/20">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+                                    En línea
+                                </span>
+</div>
+<div class="flex-1 flex flex-col justify-center space-y-md">
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="font-body-sm text-body-sm text-[#a3a3a3]">Uptime Global</span>
+<span class="font-title-md text-title-md font-bold text-[#fafafa]">99.9%</span>
+</div>
+<div class="w-full h-1 bg-[#262626] rounded-full overflow-hidden">
+<div class="h-full bg-[#10b981] w-[99.9%] rounded-full"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="font-body-sm text-body-sm text-[#a3a3a3]">Latencia del Servidor</span>
+<span class="font-title-md text-title-md font-bold text-[#fafafa]">42ms</span>
+</div>
+<div class="w-full h-1 bg-[#262626] rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[15%] rounded-full"></div>
+</div>
+</div>
+<div class="mt-auto pt-md border-t border-[#262626]">
+<button class="w-full bg-[#262626] hover:bg-[#333333] text-[#fafafa] font-body-sm text-body-sm font-semibold py-2 rounded-lg transition-colors border border-[#262626] hover:border-[#404040]">
+                                        Ver Métricas Detalladas
+                                     </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>
