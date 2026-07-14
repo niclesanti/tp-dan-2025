@@ -36,7 +36,7 @@ export function TarjetaFormDialog({
   onSubmit,
   isLoading,
 }: TarjetaFormDialogProps) {
-  const { data: bancos = [] } = useBancos();
+  const { data: bancos = [], isLoading: isLoadingBancos } = useBancos();
   const formId = useId();
 
   const form = useForm<TarjetaFormValues>({
@@ -47,7 +47,6 @@ export function TarjetaFormDialog({
       fechaVencimiento: "",
       cvc: "",
       esPrincipal: false,
-      bancoId: 0,
     },
   });
 
@@ -59,7 +58,6 @@ export function TarjetaFormDialog({
         fechaVencimiento: "",
         cvc: "",
         esPrincipal: false,
-        bancoId: 0,
       });
     }
   }, [open, form]);
@@ -121,7 +119,7 @@ export function TarjetaFormDialog({
                 <Field>
                   <FieldLabel>Banco</FieldLabel>
                   <Select
-                    value={form.watch("bancoId")?.toString() || ""}
+                    value={form.watch("bancoId")?.toString()}
                     onValueChange={(val) =>
                       form.setValue("bancoId", Number(val), {
                         shouldValidate: true,
@@ -129,7 +127,7 @@ export function TarjetaFormDialog({
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar" />
+                      <SelectValue placeholder={isLoadingBancos ? "Cargando bancos..." : "Seleccionar banco"} />
                     </SelectTrigger>
                     <SelectContent>
                       {bancos.map((b) => (

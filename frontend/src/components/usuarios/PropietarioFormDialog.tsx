@@ -40,7 +40,7 @@ export function PropietarioFormDialog({
   isLoading,
 }: PropietarioFormDialogProps) {
   const isEditing = !!propietario;
-  const { data: bancos = [] } = useBancos();
+  const { data: bancos = [], isLoading: isLoadingBancos } = useBancos();
   const formId = useId();
 
   const createForm = useForm<PropietarioFormValues>({
@@ -55,7 +55,6 @@ export function PropietarioFormDialog({
         numeroCuenta: "",
         cbu: "",
         alias: "",
-        bancoId: 0,
       },
     },
   });
@@ -94,7 +93,6 @@ export function PropietarioFormDialog({
             numeroCuenta: "",
             cbu: "",
             alias: "",
-            bancoId: 0,
           },
         });
       }
@@ -206,7 +204,7 @@ export function PropietarioFormDialog({
                   <Field>
                     <FieldLabel>Banco</FieldLabel>
                     <Select
-                      value={createForm.watch("cuentaBancaria.bancoId")?.toString() || ""}
+                      value={createForm.watch("cuentaBancaria.bancoId")?.toString()}
                       onValueChange={(val) =>
                         createForm.setValue("cuentaBancaria.bancoId", Number(val), {
                           shouldValidate: true,
@@ -214,7 +212,7 @@ export function PropietarioFormDialog({
                       }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccionar banco" />
+                        <SelectValue placeholder={isLoadingBancos ? "Cargando bancos..." : "Seleccionar banco"} />
                       </SelectTrigger>
                       <SelectContent>
                         {bancos.map((b) => (

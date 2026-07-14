@@ -40,7 +40,7 @@ export function HuespedFormDialog({
   isLoading,
 }: HuespedFormDialogProps) {
   const isEditing = !!huesped;
-  const { data: bancos = [] } = useBancos();
+  const { data: bancos = [], isLoading: isLoadingBancos } = useBancos();
   const formId = useId();
 
   const createForm = useForm<HuespedFormValues>({
@@ -57,7 +57,6 @@ export function HuespedFormDialog({
         fechaVencimiento: "",
         cvc: "",
         esPrincipal: true,
-        bancoId: 0,
       },
     },
   });
@@ -98,7 +97,6 @@ export function HuespedFormDialog({
             fechaVencimiento: "",
             cvc: "",
             esPrincipal: true,
-            bancoId: 0,
           },
         });
       }
@@ -220,7 +218,7 @@ export function HuespedFormDialog({
                     <Field>
                       <FieldLabel>Banco</FieldLabel>
                       <Select
-                        value={createForm.watch("tarjetaCredito.bancoId")?.toString() || ""}
+                        value={createForm.watch("tarjetaCredito.bancoId")?.toString()}
                         onValueChange={(val) =>
                           createForm.setValue("tarjetaCredito.bancoId", Number(val), {
                             shouldValidate: true,
@@ -228,7 +226,7 @@ export function HuespedFormDialog({
                         }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Seleccionar" />
+                          <SelectValue placeholder={isLoadingBancos ? "Cargando bancos..." : "Seleccionar banco"} />
                         </SelectTrigger>
                         <SelectContent>
                           {bancos.map((b) => (
