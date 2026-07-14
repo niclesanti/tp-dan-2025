@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -114,7 +113,8 @@ export function PropietarioFormDialog({
             {isEditing ? "Editar Propietario" : "Nuevo Propietario"}
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="pr-2 pb-4">
           <form id={formId} onSubmit={handleSubmit} className="space-y-4">
             <FieldGroup>
               <Field>
@@ -230,7 +230,8 @@ export function PropietarioFormDialog({
               )}
             </FieldGroup>
           </form>
-        </ScrollArea>
+          </div>
+        </div>
         <DialogFooter className="flex-shrink-0">
           <Button
             type="button"
