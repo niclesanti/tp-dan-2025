@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { UsuariosPage } from "@/components/usuarios/UsuariosPage";
 import { BancosPage } from "@/components/bancos/BancosPage";
+import { HotelesPage } from "@/components/hoteles/HotelesPage";
 
 export function AppRouter() {
   return (
@@ -14,6 +15,7 @@ export function AppRouter() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/usuarios" element={<UsuariosPage />} />
             <Route path="/bancos" element={<BancosPage />} />
+            <Route path="/hoteles" element={<HotelesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
