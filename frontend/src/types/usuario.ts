@@ -103,3 +103,11 @@ export interface CuentaBancariaCreateRequest {
   alias: string;
   bancoId: number;
 }
+
+export interface BancoCreateRequest {
+  nombre: string;
+}
+
+export interface BancoUpdateRequest {
+  nombre: string;
+}

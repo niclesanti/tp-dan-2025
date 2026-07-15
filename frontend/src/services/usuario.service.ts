@@ -10,7 +10,6 @@ import type {
   PropietarioUpdateRequest,
   TarjetaCredito,
   TarjetaCreditoCreateRequest,
-  Banco,
 } from "@/types/usuario";
 
 export const usuarioService = {
@@ -89,7 +88,4 @@ export const usuarioService = {
       )
       .then((r) => r.data),
 
-  // --- Bancos ---
-  listarBancos: () =>
-    api.get<Banco[]>("/users/bancos").then((r) => r.data),
 };

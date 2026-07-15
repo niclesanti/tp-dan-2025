@@ -43,6 +43,55 @@ make test
 - **dan-common-lib**: DTOs (`HotelDTO`, `HabitacionDTO`, `TarifaDTO`) and events (`HabitacionEvent`, `HotelCierreEvent`) — must be compiled first for dependent services
 - **frontend** (`:5173`): React SPA (Vite + Tailwind + shadcn/ui) — served via nginx in Docker, multi-stage build
 
+## Frontend architecture
+
+React SPA under `frontend/src/`. Stack: React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui (base-vega), TanStack Query v5, React Hook Form + Zod, Axios, Lucide icons, sonner toasts.
+
+### Directory structure
+
+```
+frontend/src/
+├── components/
+│   ├── ui/           # shadcn components (button, dialog, input, table, field, select, badge, alert-dialog, spinner, tabs, card, etc.)
+│   ├── layout/       # AppLayout, Sidebar, Header
+│   ├── bancos/       # BancosPage, BancosSection, BancosTable, BancoFormDialog
+│   └── usuarios/     # UsuariosPage, HuespedesTab, PropietariosTab, HuespedFormDialog, PropietarioFormDialog, TarjetasSection, DeleteConfirmDialog
+├── hooks/            # TanStack Query hooks (useBancos, useHuespedes, usePropietarios, useTarjetas, etc.)
+├── lib/validators/   # Zod schemas (banco.ts, huesped.ts, propietario.ts)
+├── services/         # Axios API calls (api.ts, banco.service.ts, usuario.service.ts)
+├── types/            # TypeScript interfaces (usuario.ts — includes Banco, Huesped, Propietario, etc.)
+├── routes/           # AppRouter.tsx (react-router-dom v7)
+└── pages/            # DashboardPage
+```
+
+### Implemented sections
+
+| Section | Route | Components | API base path |
+|---------|-------|------------|---------------|
+| Dashboard | `/` | `DashboardPage` | — |
+| Usuarios | `/usuarios` | `UsuariosPage` → `HuespedesTab`, `PropietariosTab` | `/users/users/` |
+| Bancos | `/bancos` | `BancosPage` → `BancosSection`, `BancosTable`, `BancoFormDialog` | `/users/bancos` |
+
+### Code patterns
+
+- **Dual create/edit dialogs**: Single `*FormDialog` component handles both modes via optional entity prop (`entity?: Entity | null`). Two separate `useForm` instances when create has extra required fields.
+- **State management**: `useState` for `createOpen`, `editTarget`, `deleteTarget` (null = closed). Dialog `onOpenChange` clears target on close.
+- **Mutation pattern**: Hooks return `useMutation` objects. `onSuccess` in component closes dialog; `onSuccess` in hook invalidates queries and shows toast.
+- **Search**: `UsuariosSearchBar` with 300ms debounce for server-side; `useMemo` for client-side filtering (small lists like bancos).
+- **Delete confirmation**: Reusable `DeleteConfirmDialog` component (AlertDialog).
+- **API calls**: All via gateway at `localhost:8080/users/...`. Service files are plain objects with methods calling `api.get/post/put/delete`.
+- **Routing**: Routes defined in `AppRouter.tsx` inside `<AppLayout />`. Sidebar entries in `Sidebar.tsx`.
+
+### Adding a new section
+
+1. Add types to `types/usuario.ts` (or new file)
+2. Create `services/<entity>.service.ts` with CRUD methods
+3. Create `lib/validators/<entity>.ts` with Zod schema
+4. Create `hooks/use<Entities>.ts` with query + mutations
+5. Create `components/<entity>/` folder with `*Page.tsx`, `*Section.tsx`, `*Table.tsx`, `*FormDialog.tsx`
+6. Add route in `AppRouter.tsx`
+7. Sidebar entry already exists in `Sidebar.tsx` if linked from design
+
 ## Key gotchas
 
 - **Docker context must be repo root** — all Dockerfiles build from project root
