@@ -106,9 +106,16 @@ export interface HabitacionUpdateRequest {
 
 export interface Tarifa {
   id: number;
-  fechaInicio: string;
-  fechaFin: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
   tipoHabitacion: TipoHabitacion;
+  precioNoche: number;
+}
+
+export interface TarifaCreateRequest {
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
+  idTipoHabitacion: number;
   precioNoche: number;
 }
 
