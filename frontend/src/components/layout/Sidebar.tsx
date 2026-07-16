@@ -1,5 +1,4 @@
 import {
-  LayoutDashboard,
   CalendarCheck,
   Building2,
   Receipt,
@@ -18,8 +17,7 @@ import {
 import { SidebarItem } from "./SidebarItem";
 
 const navigation = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/reservas", icon: CalendarCheck, label: "Reservas" },
+  { to: "/", icon: CalendarCheck, label: "Reservas" },
   { to: "/hoteles", icon: Building2, label: "Hoteles & Habitaciones" },
   { to: "/tarifas", icon: Receipt, label: "Tarifas" },
   { to: "/usuarios", icon: Users, label: "Propietarios & Huéspedes" },

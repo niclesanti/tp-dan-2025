@@ -216,26 +216,30 @@ export function HuespedFormDialog({
                     </Field>
 
                     <Field>
-                      <FieldLabel>Banco</FieldLabel>
-                      <Select
-                        value={createForm.watch("tarjetaCredito.bancoId")?.toString()}
-                        onValueChange={(val) =>
-                          createForm.setValue("tarjetaCredito.bancoId", Number(val), {
-                            shouldValidate: true,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder={isLoadingBancos ? "Cargando bancos..." : "Seleccionar banco"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bancos.map((b) => (
-                            <SelectItem key={b.id} value={b.id.toString()}>
-                              {b.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <FieldLabel>Banco</FieldLabel>
+                    <Select
+                      value={createForm.watch("tarjetaCredito.bancoId")?.toString() ?? ""}
+                      onValueChange={(val) =>
+                        createForm.setValue("tarjetaCredito.bancoId", Number(val), {
+                          shouldValidate: true,
+                        })
+                      }
+                      items={bancos.map((b) => ({
+                        value: b.id.toString(),
+                        label: b.nombre,
+                      }))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={isLoadingBancos ? "Cargando bancos..." : "Seleccionar banco"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bancos.map((b) => (
+                          <SelectItem key={b.id} value={b.id.toString()}>
+                            {b.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                       <FieldError errors={[createForm.formState.errors.tarjetaCredito?.bancoId]} />
                     </Field>
                   </div>

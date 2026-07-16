@@ -52,8 +52,6 @@ export function HabitacionFormDialog({
     defaultValues: {
       numero: 0,
       piso: 1,
-      idTipoHabitacion: 0,
-      idHotel: 0,
     },
   });
 
@@ -62,7 +60,6 @@ export function HabitacionFormDialog({
     defaultValues: {
       numero: 0,
       piso: 1,
-      idTipoHabitacion: 0,
     },
   });
 
@@ -78,8 +75,6 @@ export function HabitacionFormDialog({
         createForm.reset({
           numero: 0,
           piso: 1,
-          idTipoHabitacion: 0,
-          idHotel: 0,
         });
       }
     }
@@ -144,6 +139,10 @@ export function HabitacionFormDialog({
                         }
                       }
                     }}
+                    items={tipos.map((t) => ({
+                      value: t.id.toString(),
+                      label: `${t.nombre} (cap. ${t.capacidad})`,
+                    }))}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={isLoadingTipos ? "Cargando tipos..." : "Seleccionar tipo"} />
@@ -169,6 +168,10 @@ export function HabitacionFormDialog({
                           createForm.setValue("idHotel", Number(val), { shouldValidate: true });
                         }
                       }}
+                      items={hoteles.map((h) => ({
+                        value: h.id.toString(),
+                        label: h.nombre,
+                      }))}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder={isLoadingHoteles ? "Cargando hoteles..." : "Seleccionar hotel"} />

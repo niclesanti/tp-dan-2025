@@ -1,6 +1,15 @@
 import { ChevronRight, Bell, PanelLeftClose, PanelLeftOpen, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useLocation } from "react-router-dom";
+
+const breadcrumbLabels: Record<string, string> = {
+  "/": "Reservas",
+  "/hoteles": "Hoteles & Habitaciones",
+  "/tarifas": "Tarifas",
+  "/usuarios": "Propietarios & Huéspedes",
+  "/bancos": "Bancos",
+};
 
 interface HeaderProps {
   collapsed?: boolean;
@@ -9,6 +18,10 @@ interface HeaderProps {
 }
 
 export function Header({ collapsed, onToggle, onMobileOpen }: HeaderProps) {
+  const location = useLocation();
+  const segment = "/" + (location.pathname.split("/")[1] || "");
+  const currentLabel = breadcrumbLabels[segment] ?? "Reservas";
+
   return (
     <header className="flex h-14 items-center gap-2 border-b border-border bg-card px-4 md:px-6">
       {/* Mobile menu trigger */}
@@ -41,7 +54,7 @@ export function Header({ collapsed, onToggle, onMobileOpen }: HeaderProps) {
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <span>App</span>
         <ChevronRight className="size-3.5" />
-        <span className="text-foreground">Dashboard</span>
+        <span className="text-foreground">{currentLabel}</span>
       </nav>
 
       <div className="flex-1" />

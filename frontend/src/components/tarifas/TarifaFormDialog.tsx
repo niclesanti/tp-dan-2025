@@ -42,7 +42,6 @@ export function TarifaFormDialog({
   const form = useForm<TarifaCreateFormValues>({
     resolver: zodResolver(tarifaCreateSchema),
     defaultValues: {
-      idTipoHabitacion: 0,
       precioNoche: 0,
       esPromocional: false,
       fechaInicio: "",
@@ -55,15 +54,13 @@ export function TarifaFormDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        idTipoHabitacion: 0,
         precioNoche: 0,
         esPromocional: false,
         fechaInicio: "",
         fechaFin: "",
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, form]);
 
   const handleSubmit = (data: TarifaCreateFormValues) => {
     onSubmit(data);
@@ -92,6 +89,10 @@ export function TarifaFormDialog({
                         form.setValue("idTipoHabitacion", Number(val), { shouldValidate: true });
                       }
                     }}
+                    items={tipos.map((t) => ({
+                      value: t.id.toString(),
+                      label: `${t.nombre} (cap. ${t.capacidad})`,
+                    }))}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={isLoadingTipos ? "Cargando tipos..." : "Seleccionar tipo"} />

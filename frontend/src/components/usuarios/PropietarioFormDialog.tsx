@@ -204,12 +204,16 @@ export function PropietarioFormDialog({
                   <Field>
                     <FieldLabel>Banco</FieldLabel>
                     <Select
-                      value={createForm.watch("cuentaBancaria.bancoId")?.toString()}
+                      value={createForm.watch("cuentaBancaria.bancoId")?.toString() ?? ""}
                       onValueChange={(val) =>
                         createForm.setValue("cuentaBancaria.bancoId", Number(val), {
                           shouldValidate: true,
                         })
                       }
+                      items={bancos.map((b) => ({
+                        value: b.id.toString(),
+                        label: b.nombre,
+                      }))}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder={isLoadingBancos ? "Cargando bancos..." : "Seleccionar banco"} />
