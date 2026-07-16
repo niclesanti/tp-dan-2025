@@ -274,8 +274,12 @@ public class ReservaServiceImpl implements ReservaService {
                         EstadoReserva.EFECTUADA,
                         EstadoReserva.BLOQUEADA,
                         EstadoReserva.CERRADA)
-                .orOperator(
-                        Criteria.where("checkIn").lt(checkOut).and("checkOut").gt(checkIn)
+                .andOperator(
+                        new Criteria().orOperator(
+                                Criteria.where("checkOut").is(null),
+                                Criteria.where("checkIn").lt(checkOut)
+                                        .and("checkOut").gt(checkIn)
+                        )
                 ));
         
         boolean hayConflicto = mongoTemplate.exists(query, Reserva.class);

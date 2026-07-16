@@ -45,52 +45,76 @@ make test
 
 ## Frontend architecture
 
-React SPA under `frontend/src/`. Stack: React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui (base-vega), TanStack Query v5, React Hook Form + Zod, Axios, Lucide icons, sonner toasts.
+React SPA under `frontend/src/`. Stack: React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui (base-vega, built on `@base-ui/react`), TanStack Query v5, React Hook Form + Zod, Axios, Lucide icons, sonner toasts.
 
 ### Directory structure
 
 ```
 frontend/src/
 ├── components/
-│   ├── ui/           # shadcn components (button, dialog, input, table, field, select, badge, alert-dialog, spinner, tabs, card, etc.)
-│   ├── layout/       # AppLayout, Sidebar, Header
-│   ├── bancos/       # BancosPage, BancosSection, BancosTable, BancoFormDialog
-│   └── usuarios/     # UsuariosPage, HuespedesTab, PropietariosTab, HuespedFormDialog, PropietarioFormDialog, TarjetasSection, DeleteConfirmDialog
-├── hooks/            # TanStack Query hooks (useBancos, useHuespedes, usePropietarios, useTarjetas, etc.)
-├── lib/validators/   # Zod schemas (banco.ts, huesped.ts, propietario.ts)
-├── services/         # Axios API calls (api.ts, banco.service.ts, usuario.service.ts)
-├── types/            # TypeScript interfaces (usuario.ts — includes Banco, Huesped, Propietario, etc.)
-├── routes/           # AppRouter.tsx (react-router-dom v7)
-└── pages/            # DashboardPage
+│   ├── ui/              # shadcn components (24 components — button, dialog, input, table, field, select, badge, alert-dialog, spinner, tabs, card, checkbox, dropdown-menu, label, pagination, popover, scroll-area, separator, sheet, skeleton, textarea, tooltip, avatar, breadcrumb)
+│   ├── layout/          # AppLayout, Sidebar, SidebarItem, Header
+│   ├── bancos/          # BancosPage, BancosSection, BancosTable, BancoFormDialog
+│   ├── usuarios/        # UsuariosPage, HuespedesTab, PropietariosTab, HuespedFormDialog, PropietarioFormDialog, TarjetasSection, TarjetaFormDialog, UsuariosSearchBar, DeleteConfirmDialog
+│   ├── hoteles/         # HotelesPage, HotelesTab, HabitacionesTab, HotelFormDialog, HabitacionFormDialog, AmenitiesManager, StarRating
+│   ├── tarifas/         # TarifasPage, TarifasTable, TarifaFormDialog
+│   └── reservas/        # ReservasPage, BuscarHabitacionesTab, GestionReservasTab, CrearReservaDialog, ReservaDetailDialog, PagoFormDialog, ReviewFormDialog, EstadoBadge
+├── hooks/               # TanStack Query hooks (useBancos, useHuespedes, usePropietarios, useTarjetas, useUsuarios, useBuscarUsuarios, useHoteles, useTarifas, useReservas)
+├── lib/
+│   ├── utils.ts         # cn() utility (clsx + twMerge)
+│   └── validators/      # Zod schemas (banco, huesped, propietario, hotel, habitacion, tarifa, reserva)
+├── services/            # Axios API calls (api.ts, banco.service.ts, usuario.service.ts, hotel.service.ts, tarifa.service.ts, reserva.service.ts)
+├── types/               # TypeScript interfaces (usuario.ts, hotel.ts, reserva.ts)
+├── routes/              # AppRouter.tsx (react-router-dom v7)
+└── pages/               # LoginPage
 ```
 
 ### Implemented sections
 
 | Section | Route | Components | API base path |
 |---------|-------|------------|---------------|
-| Dashboard | `/` | `DashboardPage` | — |
+| Reservas | `/` (index) | `ReservasPage` → `BuscarHabitacionesTab`, `GestionReservasTab` | `/reservas` |
 | Usuarios | `/usuarios` | `UsuariosPage` → `HuespedesTab`, `PropietariosTab` | `/users/users/` |
 | Bancos | `/bancos` | `BancosPage` → `BancosSection`, `BancosTable`, `BancoFormDialog` | `/users/bancos` |
+| Hoteles | `/hoteles` | `HotelesPage` → `HotelesTab`, `HabitacionesTab` | `/gestion` |
+| Tarifas | `/tarifas` | `TarifasPage` → `TarifasTable`, `TarifaFormDialog` | `/gestion/tarifas` |
+| Login | `/login` | `LoginPage` (standalone, no layout) | — |
+
+### Sidebar navigation
+
+5 entries in `Sidebar.tsx`: Reservas (`/`), Hoteles & Habitaciones (`/hoteles`), Tarifas (`/tarifas`), Usuarios (`/usuarios`), Bancos (`/bancos`).
+
+### Routing
+
+Routes defined in `AppRouter.tsx`. All routes except `/login` render inside `<AppLayout />` (sidebar + header + `<Outlet />`). Index route (`/`) renders `ReservasPage`.
 
 ### Code patterns
 
-- **Dual create/edit dialogs**: Single `*FormDialog` component handles both modes via optional entity prop (`entity?: Entity | null`). Two separate `useForm` instances when create has extra required fields.
-- **State management**: `useState` for `createOpen`, `editTarget`, `deleteTarget` (null = closed). Dialog `onOpenChange` clears target on close.
-- **Mutation pattern**: Hooks return `useMutation` objects. `onSuccess` in component closes dialog; `onSuccess` in hook invalidates queries and shows toast.
-- **Search**: `UsuariosSearchBar` with 300ms debounce for server-side; `useMemo` for client-side filtering (small lists like bancos).
-- **Delete confirmation**: Reusable `DeleteConfirmDialog` component (AlertDialog).
-- **API calls**: All via gateway at `localhost:8080/users/...`. Service files are plain objects with methods calling `api.get/post/put/delete`.
+- **Page = Tabs composition**: Most pages (`UsuariosPage`, `HotelesPage`, `ReservasPage`) use `<Tabs variant="line">` to split related CRUD into separate tab views.
+- **Dual create/edit dialogs**: Single `*FormDialog` handles both modes via optional entity prop (`entity?: Entity | null`). Two separate `useForm` instances when create has extra required fields (credit card for huésped, bank account for propietario).
+- **State management**: `useState` for `createOpen` (boolean), `editTarget` (entity | null), `deleteTarget` (entity | null). Dialog `onOpenChange` clears target on close.
+- **Mutation pattern**: Hooks return `useMutation` objects. `onSuccess` in component closes dialog; `onSuccess` in hook invalidates queries and shows toast via `sonner`.
+- **Search**: `UsuariosSearchBar` with 300ms debounce for server-side search. `useBuscarUsuarios` smart hook auto-detects DNI (digits ≥ 7) vs name search. `useMemo` for client-side filtering (bancos).
+- **Pagination**: `Pagination` component for server-side paginated tables (hoteles, habitaciones, tarifas, reservas). Client-side lists (bancos) use no pagination.
+- **Delete confirmation**: Reusable `DeleteConfirmDialog` component (AlertDialog) used across all CRUD sections.
+- **API calls**: All via gateway. Service files are plain objects with methods calling `api.get/post/put/delete/patch`. Response interceptor normalizes backend validation errors into readable messages.
 - **Routing**: Routes defined in `AppRouter.tsx` inside `<AppLayout />`. Sidebar entries in `Sidebar.tsx`.
+
+### Types
+
+- `types/usuario.ts`: `Usuario`, `Huesped`, `Propietario`, `TarjetaCredito`, `CuentaBancaria`, `Banco`, `PageResponse<T>`, plus `*CreateRequest` / `*UpdateRequest` types
+- `types/hotel.ts`: `Hotel`, `Habitacion`, `TipoHabitacion`, `Tarifa`, `Amenity` (union of 18 values), `AMENITY_LABELS`, `PageResponse<T>`, plus request types
+- `types/reserva.ts`: `ReservaDTOResponse`, `ReservaDTORequest`, `EstadoReserva` (8 states), `ESTADO_RESERVA_LABELS`, `HabitacionDisponibleDTO`, `Pago`, `Review`, `PageResponse<T>`
 
 ### Adding a new section
 
-1. Add types to `types/usuario.ts` (or new file)
-2. Create `services/<entity>.service.ts` with CRUD methods
-3. Create `lib/validators/<entity>.ts` with Zod schema
-4. Create `hooks/use<Entities>.ts` with query + mutations
-5. Create `components/<entity>/` folder with `*Page.tsx`, `*Section.tsx`, `*Table.tsx`, `*FormDialog.tsx`
-6. Add route in `AppRouter.tsx`
-7. Sidebar entry already exists in `Sidebar.tsx` if linked from design
+1. Add types to `types/` (new file per domain: `hotel.ts`, `reserva.ts`, etc.)
+2. Create `services/<entity>.service.ts` with CRUD methods using `api.get/post/put/delete/patch`
+3. Create `lib/validators/<entity>.ts` with Zod schema + exported form values type
+4. Create `hooks/use<Entities>.ts` with TanStack Query hooks (queries + mutations with toast + invalidation)
+5. Create `components/<entity>/` folder with `*Page.tsx` (tabs if needed), `*Table.tsx`, `*FormDialog.tsx`
+6. Add route in `AppRouter.tsx` inside `<Route element={<AppLayout />}>`
+7. Add sidebar entry in `Sidebar.tsx`
 
 ## Key gotchas
 
