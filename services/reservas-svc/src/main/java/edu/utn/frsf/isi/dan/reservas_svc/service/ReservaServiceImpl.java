@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,13 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     public ReservaDTOResponse crearReserva(ReservaDTORequest request) {
         log.info("Creando reserva para habitación: {}", request.idHabitacion());
-        
+
+        // Validar que checkIn no sea anterior a hoy
+        Instant inicioDeHoy = Instant.now().truncatedTo(ChronoUnit.DAYS);
+        if (request.checkIn().isBefore(inicioDeHoy)) {
+            throw new IllegalArgumentException("La fecha de check-in no puede ser anterior a hoy");
+        }
+
         // Validar que checkOut > checkIn
         if (!request.checkOut().isAfter(request.checkIn())) {
             throw new IllegalArgumentException("La fecha de check-out debe ser posterior a la fecha de check-in");

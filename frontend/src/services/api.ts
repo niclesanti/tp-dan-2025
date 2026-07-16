@@ -8,10 +8,18 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const message =
-      err.response?.data?.message ||
-      err.response?.data?.error ||
+    const data = err.response?.data;
+    let message =
+      data?.message ||
+      data?.error ||
       "Error inesperado del servidor";
+
+    // Extract field validation errors from @Valid
+    if (data?.errors && typeof data.errors === "object") {
+      const fieldMsgs = Object.values(data.errors).join("; ");
+      if (fieldMsgs) message = fieldMsgs;
+    }
+
     return Promise.reject(new Error(message));
   }
 );

@@ -31,8 +31,6 @@ El sistema debe proveer las siguientes funcionalidades:
 - Actualizar habitación
 - Eliminar habitación
 - Obtener tarifa vigente de habitación: Retorna la tarifa vigente (hoy) para una habitación específica
-- Buscar habitaciones disponibles: Busca habitaciones disponibles para un rango de fechas con filtros avanzados. Filtros disponibles: capacidad, rango de precio, categoría del hotel (1-5 estrellas), amenities (wifi, tv, piscina, etc. ), y búsqueda geoespacial por proximidad. Una habitación está disponible si no tiene reservas que se solapen con las fechas solicitadas. Todos los filtros son opcionales excepto las fechas de entrada y salida.
-- 
 
 ## Hoteles
 Gestión de entidades hoteles.
@@ -65,6 +63,7 @@ El sistema debe proveer las siguientes funcionalidades:
 - Agregar review del cliente: Permite al cliente (huésped) dejar una calificación y comentario sobre la habitación y el hotel. Solo se puede hacer después de la fecha de check-out. El review es obligatorio para finalizar la reserva.
 - Agregar review del host: Permite al dueño del hotel dejar una calificación y comentario sobre el huésped. Solo se puede hacer después de la fecha de check-out.
 - Cancela una reserva existente. Solo se puede cancelar si la reserva no tiene pagos registrados. Al cancelarse, la reserva se elimina de la lista de reservas de la habitación, liberándola para otras reservas.
+- Buscar habitaciones disponibles: Busca habitaciones disponibles para un rango de fechas con filtros avanzados. Filtros disponibles: capacidad, rango de precio, categoría del hotel (1-5 estrellas), amenities (wifi, tv, piscina, etc. ), y búsqueda geoespacial por proximidad. Una habitación está disponible si no tiene reservas que se solapen con las fechas solicitadas. Todos los filtros son opcionales excepto las fechas de entrada y salida.
 
 # Estilos y diseños
 Seguir los estilos y diseños minimalistas definidos en docs-frontend.md
