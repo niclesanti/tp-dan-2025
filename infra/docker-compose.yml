@@ -109,50 +109,93 @@ services:
     depends_on:
       - mongodb
 
-  user-svc:
+  dan-eureka-server:
     build:
-      context: ../services/user-svc
-    container_name: user-svc
+      context: ../common/dan-eureka-server
+    container_name: dan-eureka-server
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+
+  user-svc:
+    build:
+      context: ../
+      dockerfile: services/user-svc/Dockerfile
+    container_name: user-svc
+    restart: unless-stopped
+    # ports:
+    #   - "8081:8081" no necesitamos exponer el puerto en el host lo accedemos a través del gateway
     depends_on:
       - mongodb
       - mysql
       - rabbitmq
+      - dan-eureka-server
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
+      SERVER_PORT: 8081
+      #SPRING_PROFILES_ACTIVE: default
 
   reservas-svc:
     build:
-      context: ../services/reservas-svc
+      context: ../
+      dockerfile: services/reservas-svc/Dockerfile
     container_name: reservas-svc
     restart: unless-stopped
-    ports:
-      - "8082:8080"
+    # ports:
+    #   - "8082:8082" no necesitamos exponer el puerto en el host lo accedemos a través del gateway
     depends_on:
       - mongodb
       - rabbitmq
+      - dan-eureka-server
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
+      SERVER_PORT: 8082
+      #SPRING_PROFILES_ACTIVE: default
 
   gestion-svc:
     build:
-      context: ../services/gestion-svc
+      context: ../
+      dockerfile: services/gestion-svc/Dockerfile
     container_name: gestion-svc
     restart: unless-stopped
-    ports:
-      - "8083:8080"
+    # ports:
+    #   - "8083:8083" no necesitamos exponer el puerto en el host lo accedemos a través del gateway
     depends_on:
       - mysql
       - rabbitmq
+      - dan-eureka-server
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
+      SERVER_PORT: 8083
+      #SPRING_PROFILES_ACTIVE: default
 
-
+  dan-spring-gateway:
+    build:
+      context: ../
+      dockerfile: common/dan-spring-gateway/Dockerfile
+    container_name: dan-spring-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-svc
+      - reservas-svc
+      - gestion-svc
+      - dan-eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: eureka
+      SERVER_PORT: 8080
+      #SPRING_PROFILES_ACTIVE: default
 
 volumes:
   mysql_data:
   postgres_data:
   pgadmin_data:
   mongo_data:
+
+networks:
+  default:
+    external: true
+    name: observability

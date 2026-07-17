@@ -1,91 +1,38 @@
 package edu.utn.frsf.isi.dan.user.service;
 
-import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
-import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
-import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
-import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
-import edu.utn.frsf.isi.dan.user.model.Banco;
-import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
-import edu.utn.frsf.isi.dan.user.model.Huesped;
-import edu.utn.frsf.isi.dan.user.model.Propietario;
-import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
-import edu.utn.frsf.isi.dan.user.model.Usuario;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Optional;
+import edu.utn.frsf.isi.dan.user.dto.HuespedDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedDTOUpdate;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
-@Service
-public class UserService {
+public interface UserService {
 
-    @Autowired
-    private BancoRepository bancoRepository;
+    // Gestión de usuarios huéspedes
+    public HuespedDTOResponse createUsuarioHuesped(HuespedDTORequest huespedRequest);
+    public HuespedDTOResponse updateUsuarioHuesped(Integer id, HuespedDTOUpdate huespedUpdate);
+    public void deleteUsuarioHuesped(Integer id);
 
-    @Autowired 
-    private CuentaBancariaRepository cuentaBancariaRepository;
-
-    @Autowired
-    private TarjetaCreditoRepository tarjetaCreditoRepository;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    public Huesped crearUsuarioHuesped(HuespedRecord huespedRecord) {
-        // Buscar el banco por ID
-        Optional<Banco> bancoOptional = bancoRepository.findById(huespedRecord.idBanco());
-        if (bancoOptional.isEmpty()) {
-            throw new IllegalArgumentException("Banco no encontrado con ID: " + huespedRecord.idBanco());
-        }
-
-        Banco banco = bancoOptional.get();
-
-        // Crear y guardar el usuario
-        Huesped usuario = huespedRecord.toHuesped();
-        usuarioRepository.save(usuario);
-
-        // Crear y guardar la tarjeta de crédito
-        TarjetaCredito tarjetaCredito = huespedRecord.toTarjetaCredito();
-        tarjetaCredito.setHuesped(usuario);
-        tarjetaCredito.setBanco(banco);
-        TarjetaCredito tarjetaCreditoSaved =tarjetaCreditoRepository.save(tarjetaCredito);
-        if (usuario.getTarjetaCredito() == null) {
-            usuario.setTarjetaCredito(new ArrayList<>());
-        }
-        usuario.getTarjetaCredito().add(tarjetaCreditoSaved);
-        return usuario;
-    }
-
-    public void crearUsuarioPropietario(PropietarioRecord propietarioRecord) {
-        // Buscar el banco por ID
-        Optional<Banco> bancoOptional = bancoRepository.findById(propietarioRecord.cuentaBancaria().idBanco());
-        if (bancoOptional.isEmpty()) {
-            throw new IllegalArgumentException("Banco no encontrado con ID: " + propietarioRecord.cuentaBancaria().idBanco());
-        }
-
-        Banco banco = bancoOptional.get();
-
-        Propietario propietario = propietarioRecord.toPropietario();
-        CuentaBancaria cuentaBancaria = propietarioRecord.cuentaBancaria().toCuentaBancaria();
-        cuentaBancaria.setBanco(banco);
-        propietario.setCuentaBancaria(cuentaBancariaRepository.save(cuentaBancaria));
-        usuarioRepository.save(propietario);
-    }
+    // Gestion de propietarios
+    public PropietarioDTOResponse createUsuarioPropietario(PropietarioDTORequest propietarioRequest);
+    public PropietarioDTOResponse updateUsuarioPropietario(Integer id, PropietarioDTOUpdate propietarioUpdate);
+    public void deleteUsuarioPropietario(Integer id);
     
-    public Page<Usuario> buscarPorNombre(String nombre, Pageable pageable) {
-        return usuarioRepository.findByNombreContainingIgnoreCase(nombre, pageable);
-    }
+    // Búsqueda usuarios
+    public Page<UsuarioDTOResponse> buscarPorNombre(String nombre, Pageable pageable);
+    public Page<UsuarioDTOResponse> buscarPorDni(String dni, Pageable pageable);
+    public UsuarioDTOResponse buscarPorDniExacto(String dni);
 
-    public Page<Usuario> buscarPorDni(String dni, Pageable pageable) {
-        return usuarioRepository.findByDniContaining(dni, pageable);
-    }
-
-    public Usuario buscarPorDniExacto(String dni) {
-        return usuarioRepository.findByDni(dni);
-    }
+    // Métodos de gestión de tarjetas de crédito
+    TarjetaCreditoDTOResponse agregarTarjeta(Integer huespedId, TarjetaCreditoDTORequest tarjetacreditoRequest);
+    void eliminarTarjeta(Integer huespedId, Integer tarjetaId);
+    TarjetaCreditoDTOResponse cambiarTarjetaPrincipal(Integer huespedId, Integer tarjetaId);
+    Page<TarjetaCreditoDTOResponse> listarTarjetas(Integer huespedId, Pageable pageable);
 }

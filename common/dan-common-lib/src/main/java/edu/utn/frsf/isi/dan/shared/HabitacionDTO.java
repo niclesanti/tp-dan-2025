@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class HabitacionDTO {
     
-    private Long habitacionId;
+    private Integer habitacionId;
     private Integer numero;
     private Integer piso;
     private Integer tipoHabitacionId;

@@ -85,6 +85,106 @@
       }
     },
     {
+      "name": "Habitaciones - Buscar Disponibles (básico)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/habitaciones/disponibles?checkIn=2026-06-01T00:00:00Z&checkOut=2026-06-05T00:00:00Z",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["habitaciones", "disponibles"],
+          "query": [
+            { "key": "checkIn", "value": "2026-06-01T00:00:00Z", "description": "Fecha de check-in (ISO 8601)" },
+            { "key": "checkOut", "value": "2026-06-05T00:00:00Z", "description": "Fecha de check-out (ISO 8601)" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Habitaciones - Buscar Disponibles (por categoría)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/habitaciones/disponibles?checkIn=2026-06-01T00:00:00Z&checkOut=2026-06-05T00:00:00Z&categoriaHotel=5",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["habitaciones", "disponibles"],
+          "query": [
+            { "key": "checkIn", "value": "2026-06-01T00:00:00Z" },
+            { "key": "checkOut", "value": "2026-06-05T00:00:00Z" },
+            { "key": "categoriaHotel", "value": "5", "description": "Categoría del hotel (1-5 estrellas)" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Habitaciones - Buscar Disponibles (por amenities)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/habitaciones/disponibles?checkIn=2026-06-01T00:00:00Z&checkOut=2026-06-05T00:00:00Z&amenities=wifi&amenities=tv",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["habitaciones", "disponibles"],
+          "query": [
+            { "key": "checkIn", "value": "2026-06-01T00:00:00Z" },
+            { "key": "checkOut", "value": "2026-06-05T00:00:00Z" },
+            { "key": "amenities", "value": "wifi", "description": "Amenity requerida" },
+            { "key": "amenities", "value": "tv", "description": "Amenity requerida" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Habitaciones - Buscar Disponibles (geoespacial)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/habitaciones/disponibles?checkIn=2026-06-01T00:00:00Z&checkOut=2026-06-05T00:00:00Z&latitud=-31.4173&longitud=-64.1833&radioKm=50",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["habitaciones", "disponibles"],
+          "query": [
+            { "key": "checkIn", "value": "2026-06-01T00:00:00Z" },
+            { "key": "checkOut", "value": "2026-06-05T00:00:00Z" },
+            { "key": "latitud", "value": "-31.4173", "description": "Latitud (Córdoba, Argentina)" },
+            { "key": "longitud", "value": "-64.1833", "description": "Longitud (Córdoba, Argentina)" },
+            { "key": "radioKm", "value": "50", "description": "Radio de búsqueda en kilómetros" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Habitaciones - Buscar Disponibles (filtros combinados)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/habitaciones/disponibles?checkIn=2026-06-01T00:00:00Z&checkOut=2026-06-05T00:00:00Z&capacidad=2&precioMin=10000&precioMax=100000&categoriaHotel=4&amenities=wifi&amenities=piscina&latitud=-31.4173&longitud=-64.1833&radioKm=100",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["habitaciones", "disponibles"],
+          "query": [
+            { "key": "checkIn", "value": "2026-06-01T00:00:00Z" },
+            { "key": "checkOut", "value": "2026-06-05T00:00:00Z" },
+            { "key": "capacidad", "value": "2", "description": "Capacidad mínima" },
+            { "key": "precioMin", "value": "10000", "description": "Precio mínimo por noche" },
+            { "key": "precioMax", "value": "100000", "description": "Precio máximo por noche" },
+            { "key": "categoriaHotel", "value": "4", "description": "Categoría 4 estrellas" },
+            { "key": "amenities", "value": "wifi" },
+            { "key": "amenities", "value": "piscina" },
+            { "key": "latitud", "value": "-31.4173" },
+            { "key": "longitud", "value": "-64.1833" },
+            { "key": "radioKm", "value": "100" }
+          ]
+        }
+      }
+    },
+    {
       "name": "Reservas - Obtener todas",
       "request": {
         "method": "GET",

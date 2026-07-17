@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS tp_dan.hotel (
     longitud decimal(10,7),
     telefono varchar(30),
     correo_contacto varchar(100),
-    categoria integer NOT NULL
+    categoria integer NOT NULL,
+    fecha_cierre date
 );
 
 -- Tabla tipo_habitacion
@@ -46,7 +47,7 @@ ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS tp_dan.tarifa (
     id serial PRIMARY KEY,
     fecha_inicio date NOT NULL,
-    fecha_fin date NOT NULL,
+    fecha_fin date,
     id_tipo_habitacion integer NOT NULL REFERENCES tp_dan.tipo_habitacion(id),
     precio_noche decimal(10,2) NOT NULL
 );

@@ -1,0 +1,424 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║ Docker Compose - Base Configuration                                ║
+# ║ Sistema de Gestión Hotelera                                        ║
+# ║                                                                    ║
+# ║ Uso:                                                               ║
+# ║   Development: docker compose up -d --build                        ║
+# ║   Production:  docker compose -f docker-compose.yml \              ║
+# ║                -f docker-compose.prod.yml up -d --build            ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+# ── Networks ──────────────────────────────────────────────────────
+networks:
+  tp-dan-network:
+    driver: bridge
+    name: tp-dan-network
+
+# ── Volumes ───────────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    name: tp-dan-mysql-data
+    driver: local
+  postgres_data:
+    name: tp-dan-postgres-data
+    driver: local
+  pgadmin_data:
+    name: tp-dan-pgadmin-data
+    driver: local
+  mongo_data:
+    name: tp-dan-mongo-data
+    driver: local
+  rabbitmq_data:
+    name: tp-dan-rabbitmq-data
+    driver: local
+  tempo_data:
+    name: tp-dan-tempo-data
+    driver: local
+  loki_data:
+    name: tp-dan-loki-data
+    driver: local
+  prometheus_data:
+    name: tp-dan-prometheus-data
+    driver: local
+  grafana_data:
+    name: tp-dan-grafana-data
+    driver: local
+
+# ── Services ──────────────────────────────────────────────────────
+services:
+  
+  # ── MySQL Database ──────────────────────────────────────────────
+  mysql:
+    image: mysql:8.3
+    container_name: tp-dan-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-users}
+      MYSQL_USER: ${MYSQL_USER:-usr_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-usrapp}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpwd}
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infra/mysql/initdb/:/docker-entrypoint-initdb.d/:ro
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpwd}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── PHPMyAdmin ──────────────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: tp-dan-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-usr_app}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-usrapp}
+    networks:
+      - tp-dan-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # ── PostgreSQL Database ────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: tp-dan-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppwd}
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/initdb/:/docker-entrypoint-initdb.d/:ro
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-appuser} -d ${POSTGRES_DB:-appdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── PgAdmin ──────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tp-dan-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./infra/pgadmin/config/servers/:/pgadmin4/servers/:ro
+    networks:
+      - tp-dan-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── RabbitMQ ─────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: tp-dan-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin}
+      RABBITMQ_ERLANG_COOKIE: "tp-dan-cookie-secret-key"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── User Service ────────────────────────────────────────────────
+  user-svc:
+    build:
+      context: .
+      dockerfile: services/user-svc/Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-users}
+      MYSQL_USER: ${MYSQL_USER:-usr_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-usrapp}
+    networks:
+      - tp-dan-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── Gestion Service ─────────────────────────────────────────────
+  gestion-svc:
+    build:
+      context: .
+      dockerfile: services/gestion-svc/Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppwd}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    networks:
+      - tp-dan-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── MongoDB Database ─────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: tp-dan-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-rootpwd}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-reservas}
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - tp-dan-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Mongo Express ───────────────────────────────────────────────
+  mongo-express:
+    image: mongo-express:latest
+    container_name: tp-dan-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-rootpwd}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER:-root}:${MONGO_PASSWORD:-rootpwd}@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - tp-dan-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ── Reservas Service ────────────────────────────────────────────
+  reservas-svc:
+    build:
+      context: .
+      dockerfile: services/reservas-svc/Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
+      MONGO_HOST: mongodb
+      MONGO_USER: ${MONGO_USER:-root}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:-rootpwd}
+      MONGO_DB: ${MONGO_DB:-reservas}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    networks:
+      - tp-dan-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── Eureka Server ─────────────────────────────────────────────
+  dan-eureka-server:
+    build:
+      context: .
+      dockerfile: common/dan-eureka-server/Dockerfile
+    container_name: dan-eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - tp-dan-network
+
+  # ── API Gateway ───────────────────────────────────────────────
+  dan-gateway:
+    build:
+      context: .
+      dockerfile: common/dan-spring-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev,eureka}
+    networks:
+      - tp-dan-network
+    depends_on:
+      user-svc:
+        condition: service_healthy
+      reservas-svc:
+        condition: service_healthy
+      gestion-svc:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── OpenTelemetry Collector ────────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.102.0
+    container_name: tp-dan-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./infra/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - tp-dan-network
+    depends_on:
+      tempo:
+        condition: service_started
+
+  # ── Tempo (Distributed Tracing) ───────────────────────────────
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: tp-dan-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./infra/tempo/tempo-config.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
+    networks:
+      - tp-dan-network
+
+  # ── Loki (Log Aggregation) ────────────────────────────────────
+  loki:
+    image: grafana/loki:latest
+    container_name: tp-dan-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./infra/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    networks:
+      - tp-dan-network
+
+  # ── Promtail (Log Collection) ─────────────────────────────────
+  promtail:
+    image: grafana/promtail:latest
+    container_name: tp-dan-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./infra/promtail/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - tp-dan-network
+    depends_on:
+      loki:
+        condition: service_started
+
+  # ── Prometheus (Metrics) ──────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tp-dan-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - tp-dan-network
+
+  # ── Frontend (React SPA) ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - tp-dan-network
+
+  # ── Grafana (Visualization) ───────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tp-dan-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./infra/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    networks:
+      - tp-dan-network
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+      tempo:
+        condition: service_started

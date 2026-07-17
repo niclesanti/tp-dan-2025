@@ -1,0 +1,124 @@
+name: CI - Tests
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.3
+        env:
+          MYSQL_ROOT_PASSWORD: rootpwd
+          MYSQL_DATABASE: users
+          MYSQL_USER: usr_app
+          MYSQL_PASSWORD: usrapp
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+    
+    - name: Configurar Java 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: 'maven'
+    
+    - name: Dar permisos de ejecución a mvnw
+      run: chmod +x mvnw
+    
+    - name: Ejecutar tests de user-svc
+      run: ./mvnw clean test -pl services/user-svc -am -B
+      env:
+        MYSQL_HOST: localhost
+        MYSQL_DATABASE: users
+        MYSQL_USER: usr_app
+        MYSQL_PASSWORD: usrapp
+    
+    - name: Publicar resultados de tests
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: Resultados de Tests Maven
+        path: '**/target/surefire-reports/TEST-*.xml'
+        reporter: java-junit
+        fail-on-error: true
+
+  test-gestion-svc:
+    runs-on: ubuntu-latest
+    # Testcontainers levanta sus propios contenedores (PostgreSQL + RabbitMQ)
+    # No se necesitan service containers en el job
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Configurar Java 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: 'maven'
+
+    - name: Dar permisos de ejecución a mvnw
+      run: chmod +x mvnw
+
+    - name: Ejecutar tests de gestion-svc
+      run: ./mvnw clean test -pl services/gestion-svc -am -B
+
+    - name: Publicar resultados de tests
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: Resultados de Tests Maven - gestion-svc
+        path: 'services/gestion-svc/target/surefire-reports/TEST-*.xml'
+        reporter: java-junit
+        fail-on-error: true
+
+  test-reservas-svc:
+    runs-on: ubuntu-latest
+    # Testcontainers levanta sus propios contenedores (MongoDB + RabbitMQ)
+    # No se necesitan service containers en el job
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Configurar Java 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: 'maven'
+
+    - name: Dar permisos de ejecución a mvnw
+      run: chmod +x mvnw
+
+    - name: Ejecutar tests de reservas-svc
+      run: ./mvnw clean test -pl services/reservas-svc -am -B
+
+    - name: Publicar resultados de tests
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: Resultados de Tests Maven - reservas-svc
+        path: 'services/reservas-svc/target/surefire-reports/TEST-*.xml'
+        reporter: java-junit
+        fail-on-error: true

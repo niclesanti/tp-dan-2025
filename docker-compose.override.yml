@@ -1,0 +1,192 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║ Docker Compose Override - Development Configuration               ║
+# ║                                                                    ║
+# ║ Este archivo se aplica automáticamente en desarrollo cuando       ║
+# ║ ejecutas: docker compose up -d --build                             ║
+# ║                                                                    ║
+# ║ Características de desarrollo:                                    ║
+# ║ - Puertos expuestos para acceso directo                            ║
+# ║ - Logs verbosos                                                    ║
+# ║ - Hot reload habilitado                                            ║
+# ║ - Sin límites de recursos                                          ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+services:
+  
+  # ── MySQL (Development) ─────────────────────────────────────────
+  mysql:
+    ports:
+      - "3307:3306"  # Exponer para conexión directa desde IDE (3306 usado por Docker Desktop)
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --log-error-verbosity=3  # Logs verbosos
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── PHPMyAdmin (Development) ────────────────────────────────────
+  phpmyadmin:
+    ports:
+      - "6080:80"  # Acceso web: http://localhost:6080
+    environment:
+      UPLOAD_LIMIT: 300M
+      MEMORY_LIMIT: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ── PostgreSQL (Development) ──────────────────────────────────
+  postgres:
+    ports:
+      - "5433:5432"  # Exponer para conexión directa desde IDE (5433 evita conflicto con postgres local)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── PgAdmin (Development) ─────────────────────────────────────
+  pgadmin:
+    ports:
+      - "6081:80"  # Acceso web: http://localhost:6081
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ── RabbitMQ (Development) ────────────────────────────────────
+  rabbitmq:
+    ports:
+      - "5673:5672"    # AMQP (5672 usado por Docker Desktop)
+      - "15673:15672"  # Management UI: http://localhost:15673
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── User Service (Development) ──────────────────────────────────
+  user-svc:
+    ports:
+      - "8081:8080"  # API REST: http://localhost:8081
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,eureka
+      # Habilitar debugging remoto
+      JAVA_TOOL_OPTIONS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+        -Xdebug
+    volumes:
+      # Código fuente montado para hot reload (opcional)
+      # - ./services/user-svc/src:/app/src:ro
+      - ./services/user-svc/logs:/app/logs  # Logs persistentes
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Gestion Service (Development) ──────────────────────────────
+  gestion-svc:
+    ports:
+      - "8083:8080"  # API REST: http://localhost:8083
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,eureka
+      # Habilitar debugging remoto
+      JAVA_TOOL_OPTIONS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+        -Xdebug
+    volumes:
+      - ./services/gestion-svc/logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  # ── MongoDB (Development) ──────────────────────────────────────
+  mongodb:
+    ports:
+      - "27018:27017"  # Exponer para conexión directa desde IDE (27017 usado por Docker Desktop)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Mongo Express (Development) ───────────────────────────────
+  mongo-express:
+    ports:
+      - "6091:8081"  # Acceso web: http://localhost:6091
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ── Reservas Service (Development) ─────────────────────────────
+  reservas-svc:
+    ports:
+      - "8082:8080"  # API REST: http://localhost:8082
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,eureka
+      # Habilitar debugging remoto
+      JAVA_TOOL_OPTIONS: >-
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+        -Xdebug
+    volumes:
+      - ./services/reservas-svc/logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── API Gateway (Development) ─────────────────────────────────
+  dan-gateway:
+    ports:
+      - "8080:8080"  # API Gateway: http://localhost:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,eureka
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── OpenTelemetry Collector (Development) ─────────────────────
+  otel-collector:
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus exporter metrics
+
+  # ── Tempo (Development) ──────────────────────────────────────
+  tempo:
+    ports:
+      - "3200:3200"   # Tempo API
+
+  # ── Loki (Development) ───────────────────────────────────────
+  loki:
+    ports:
+      - "3100:3100"   # Loki API
+
+  # ── Prometheus (Development) ─────────────────────────────────
+  prometheus:
+    ports:
+      - "9090:9090"   # Prometheus UI
+
+  # ── Frontend (Development) ───────────────────────────────────
+  frontend:
+    ports:
+      - "5173:80"  # Frontend: http://localhost:5173
+
+  # ── Grafana (Development) ────────────────────────────────────
+  grafana:
+    ports:
+      - "3000:3000"   # Grafana UI: http://localhost:3000
