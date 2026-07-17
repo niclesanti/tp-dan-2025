@@ -181,6 +181,11 @@ services:
     ports:
       - "9090:9090"   # Prometheus UI
 
+  # ── Frontend (Development) ───────────────────────────────────
+  frontend:
+    ports:
+      - "5173:80"  # Frontend: http://localhost:5173
+
   # ── Grafana (Development) ────────────────────────────────────
   grafana:
     ports:

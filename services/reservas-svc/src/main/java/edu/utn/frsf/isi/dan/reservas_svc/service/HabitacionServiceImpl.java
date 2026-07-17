@@ -144,7 +144,7 @@ public class HabitacionServiceImpl implements HabitacionService {
         
         // Filtrar las que NO tienen reservas conflictivas
         List<Habitacion> disponibles = todasHabitaciones.stream()
-                .filter(hab -> esHabitacionDisponible(hab.getId(), checkIn, checkOut))
+                .filter(hab -> esHabitacionDisponible(String.valueOf(hab.getHabitacionId()), checkIn, checkOut))
                 .collect(Collectors.toList());
         
         // Aplicar paginación
@@ -236,8 +236,12 @@ public class HabitacionServiceImpl implements HabitacionService {
                                 EstadoReserva.EFECTUADA,
                                 EstadoReserva.BLOQUEADA,
                                 EstadoReserva.CERRADA)
-                        .orOperator(
-                                Criteria.where("checkIn").lt(checkOut).and("checkOut").gt(checkIn)
+                        .andOperator(
+                                new Criteria().orOperator(
+                                        Criteria.where("checkOut").is(null),
+                                        Criteria.where("checkIn").lt(checkOut)
+                                                .and("checkOut").gt(checkIn)
+                                )
                         )
         );
         

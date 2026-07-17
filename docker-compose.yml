@@ -391,6 +391,15 @@ services:
     networks:
       - tp-dan-network
 
+  # ── Frontend (React SPA) ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - tp-dan-network
+
   # ── Grafana (Visualization) ───────────────────────────────────
   grafana:
     image: grafana/grafana:latest

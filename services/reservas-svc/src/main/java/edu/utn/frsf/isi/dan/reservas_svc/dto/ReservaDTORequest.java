@@ -10,15 +10,14 @@ import java.time.Instant;
 public record ReservaDTORequest(
         @NotBlank(message = "El ID de la habitación es obligatorio")
         String idHabitacion,
-        
+
         @NotNull(message = "La fecha de check-in es obligatoria")
-        @Future(message = "La fecha de check-in debe ser futura")
         Instant checkIn,
-        
+
         @NotNull(message = "La fecha de check-out es obligatoria")
         @Future(message = "La fecha de check-out debe ser futura")
         Instant checkOut,
-        
+
         @NotNull(message = "Los datos del huésped son obligatorios")
         Huesped huesped
 ) {
