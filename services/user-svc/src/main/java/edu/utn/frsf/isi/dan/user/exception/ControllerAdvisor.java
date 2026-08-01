@@ -61,6 +61,21 @@ public class ControllerAdvisor {
         return new ResponseEntity<>(exceptionInfo, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    /**
+     * Maneja BancoEnUsoException → 409 CONFLICT
+     * Se lanza cuando se intenta eliminar un banco que tiene tarjetas de crédito o cuentas bancarias asociadas.
+     */
+    @ExceptionHandler(BancoEnUsoException.class)
+    public ResponseEntity<ExceptionInfo> handleBancoEnUsoException(BancoEnUsoException ex, WebRequest request) {
+        ExceptionInfo exceptionInfo = new ExceptionInfo(
+                ex.getMessage(),
+                request.getDescription(false),
+                String.valueOf(System.currentTimeMillis()),
+                HttpStatus.CONFLICT.value()
+        );
+        return new ResponseEntity<>(exceptionInfo, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ExceptionInfo> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()

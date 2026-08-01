@@ -80,14 +80,6 @@ export interface PropietarioCreateRequest {
   idHotel: number | null;
 }
 
-export interface PropietarioUpdateRequest {
-  nombre: string;
-  email: string;
-  telefono: string;
-  dni: string;
-  idHotel: number | null;
-}
-
 export interface TarjetaCreditoCreateRequest {
   numero: string;
   nombreTitular: string;

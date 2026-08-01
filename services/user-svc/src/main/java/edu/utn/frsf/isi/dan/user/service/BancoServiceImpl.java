@@ -6,9 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
+import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
+import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOUpdate;
+import edu.utn.frsf.isi.dan.user.exception.BancoEnUsoException;
 import edu.utn.frsf.isi.dan.user.mapper.BancoMapper;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import jakarta.persistence.EntityNotFoundException;
@@ -22,6 +25,8 @@ public class BancoServiceImpl implements BancoService {
 
     private final BancoRepository bancoRepository;
     private final BancoMapper bancoMapper;
+    private final TarjetaCreditoRepository tarjetaCreditoRepository;
+    private final CuentaBancariaRepository cuentaBancariaRepository;
     
     /**
      * Crea un nuevo banco en el sistema.
@@ -92,6 +97,14 @@ public class BancoServiceImpl implements BancoService {
                     log.error(errorMessage);
                     return new EntityNotFoundException(errorMessage);
                 });
+
+        if (tarjetaCreditoRepository.existsByBancoId(id)
+                || cuentaBancariaRepository.existsByBancoId(id)) {
+            String errorMessage = "No se puede eliminar el banco con ID: " + id
+                    + " porque está en uso por tarjetas de crédito o cuentas bancarias";
+            log.warn(errorMessage);
+            throw new BancoEnUsoException(errorMessage);
+        }
 
         bancoRepository.delete(banco);
 

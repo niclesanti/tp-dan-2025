@@ -7,7 +7,6 @@ import type {
   HuespedUpdateRequest,
   Propietario,
   PropietarioCreateRequest,
-  PropietarioUpdateRequest,
   TarjetaCredito,
   TarjetaCreditoCreateRequest,
 } from "@/types/usuario";
@@ -52,14 +51,6 @@ export const usuarioService = {
     api
       .post<Propietario>("/users/users/propietario", data)
       .then((r) => r.data),
-
-  actualizarPropietario: (id: number, data: PropietarioUpdateRequest) =>
-    api
-      .put<Propietario>(`/users/users/propietario/${id}`, data)
-      .then((r) => r.data),
-
-  eliminarPropietario: (id: number) =>
-    api.delete(`/users/users/propietario/${id}`),
 
   // --- Tarjetas de crédito ---
   listarTarjetas: (huespedId: number, page = 0, size = 10) =>
