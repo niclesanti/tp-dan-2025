@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CuentaBancariaRepository extends JpaRepository<CuentaBancaria, Integer> {
+
+    boolean existsByBancoId(Integer bancoId);
 }

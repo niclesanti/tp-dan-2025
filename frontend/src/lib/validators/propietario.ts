@@ -30,22 +30,8 @@ export const propietarioSchema = z.object({
     .regex(telefonoRegex, "Formato de teléfono inválido"),
   dni: z.string().regex(dniRegex, "DNI debe tener 7 u 8 dígitos"),
   cuentaBancaria: cuentaBancariaSchema,
-  idHotel: z.number().int().positive().nullable(),
-});
-
-export const propietarioUpdateSchema = z.object({
-  nombre: z
-    .string()
-    .min(2, "Mínimo 2 caracteres")
-    .max(255, "Máximo 255 caracteres"),
-  email: z.string().email("Email inválido"),
-  telefono: z
-    .string()
-    .regex(telefonoRegex, "Formato de teléfono inválido"),
-  dni: z.string().regex(dniRegex, "DNI debe tener 7 u 8 dígitos"),
-  idHotel: z.number().int().positive().nullable(),
+  idHotel: z.number().int().positive("Debés seleccionar un hotel"),
 });
 
 export type PropietarioFormValues = z.infer<typeof propietarioSchema>;
-export type PropietarioUpdateFormValues = z.infer<typeof propietarioUpdateSchema>;
 export type CuentaBancariaFormValues = z.infer<typeof cuentaBancariaSchema>;

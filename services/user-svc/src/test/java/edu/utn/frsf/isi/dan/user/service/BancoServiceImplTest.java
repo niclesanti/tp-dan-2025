@@ -2,9 +2,12 @@ package edu.utn.frsf.isi.dan.user.service;
 
 import edu.utn.frsf.isi.dan.user.TestDataFactory;
 import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
+import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
+import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOUpdate;
+import edu.utn.frsf.isi.dan.user.exception.BancoEnUsoException;
 import edu.utn.frsf.isi.dan.user.mapper.BancoMapper;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import jakarta.persistence.EntityNotFoundException;
@@ -37,6 +40,12 @@ class BancoServiceImplTest {
 
     @Mock
     private BancoMapper bancoMapper;
+
+    @Mock
+    private TarjetaCreditoRepository tarjetaCreditoRepository;
+
+    @Mock
+    private CuentaBancariaRepository cuentaBancariaRepository;
 
     @InjectMocks
     private BancoServiceImpl bancoService;
@@ -126,11 +135,15 @@ class BancoServiceImplTest {
             Banco banco = TestDataFactory.banco();
 
             when(bancoRepository.findById(1)).thenReturn(Optional.of(banco));
+            when(tarjetaCreditoRepository.existsByBancoId(1)).thenReturn(false);
+            when(cuentaBancariaRepository.existsByBancoId(1)).thenReturn(false);
             doNothing().when(bancoRepository).delete(banco);
 
             bancoService.eliminarBanco(1);
 
             verify(bancoRepository).delete(banco);
+            verify(tarjetaCreditoRepository).existsByBancoId(1);
+            verify(cuentaBancariaRepository).existsByBancoId(1);
         }
 
         @Test
@@ -141,6 +154,37 @@ class BancoServiceImplTest {
             assertThatThrownBy(() -> bancoService.eliminarBanco(99))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("99");
+
+            verify(bancoRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("Debe lanzar BancoEnUsoException cuando el banco está referenciado por tarjetas de crédito")
+        void debeLanzarBancoEnUsoCuandoReferenciadoPorTarjeta() {
+            Banco banco = TestDataFactory.banco();
+
+            when(bancoRepository.findById(1)).thenReturn(Optional.of(banco));
+            when(tarjetaCreditoRepository.existsByBancoId(1)).thenReturn(true);
+
+            assertThatThrownBy(() -> bancoService.eliminarBanco(1))
+                    .isInstanceOf(BancoEnUsoException.class)
+                    .hasMessageContaining("1");
+
+            verify(bancoRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("Debe lanzar BancoEnUsoException cuando el banco está referenciado por cuentas bancarias")
+        void debeLanzarBancoEnUsoCuandoReferenciadoPorCuentaBancaria() {
+            Banco banco = TestDataFactory.banco();
+
+            when(bancoRepository.findById(1)).thenReturn(Optional.of(banco));
+            when(tarjetaCreditoRepository.existsByBancoId(1)).thenReturn(false);
+            when(cuentaBancariaRepository.existsByBancoId(1)).thenReturn(true);
+
+            assertThatThrownBy(() -> bancoService.eliminarBanco(1))
+                    .isInstanceOf(BancoEnUsoException.class)
+                    .hasMessageContaining("1");
 
             verify(bancoRepository, never()).delete(any());
         }
