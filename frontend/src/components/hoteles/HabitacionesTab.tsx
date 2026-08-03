@@ -152,7 +152,6 @@ export function HabitacionesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">ID</TableHead>
                   <TableHead>Nro.</TableHead>
                   <TableHead>Piso</TableHead>
                   <TableHead>Tipo</TableHead>
@@ -164,9 +163,6 @@ export function HabitacionesTab() {
               <TableBody>
                 {habitaciones.map((hab) => (
                   <TableRow key={hab.id}>
-                    <TableCell>
-                      <Badge variant="secondary">{hab.id}</Badge>
-                    </TableCell>
                     <TableCell className="font-medium">{hab.numero}</TableCell>
                     <TableCell className="text-muted-foreground">{hab.piso}</TableCell>
                     <TableCell>

@@ -8,7 +8,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -164,7 +163,6 @@ export function HotelesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">ID</TableHead>
                   <TableHead>Nombre</TableHead>
                   <TableHead>CUIT</TableHead>
                   <TableHead>Domicilio</TableHead>
@@ -179,9 +177,6 @@ export function HotelesTab() {
                 {hoteles.map((h) => (
                   <Fragment key={h.id}>
                     <TableRow>
-                      <TableCell>
-                        <Badge variant="secondary">{h.id}</Badge>
-                      </TableCell>
                       <TableCell className="font-medium">{h.nombre}</TableCell>
                       <TableCell className="text-muted-foreground">{h.cuit}</TableCell>
                       <TableCell className="text-muted-foreground">{h.domicilio}</TableCell>
@@ -234,7 +229,7 @@ export function HotelesTab() {
                     </TableRow>
                     {expandedId === h.id && (
                       <TableRow key={`${h.id}-amenities`}>
-                        <TableCell colSpan={9} className="bg-muted/30 p-4">
+                        <TableCell colSpan={8} className="bg-muted/30 p-4">
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-muted-foreground">Amenities del hotel</p>
                             <AmenitiesManager hotelId={h.id} amenities={h.amenities} />
