@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
@@ -31,7 +32,9 @@ export function AppLayout() {
           onMobileOpen={() => setMobileOpen(true)}
         />
         <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

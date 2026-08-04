@@ -52,7 +52,7 @@ public class ReservaServiceImpl implements ReservaService {
                         "Habitación no encontrada con ID: " + request.idHabitacion()));
         
         // Validar disponibilidad
-        validarDisponibilidad(request.idHabitacion(), request.checkIn(), request.checkOut());
+        validarDisponibilidad(habitacion, request.checkIn(), request.checkOut());
         
         // Calcular precio total
         long cantidadNoches = Duration.between(request.checkIn(), request.checkOut()).toDays();
@@ -265,9 +265,11 @@ public class ReservaServiceImpl implements ReservaService {
                 });
     }
 
-    private void validarDisponibilidad(String idHabitacion, Instant checkIn, Instant checkOut) {
+    private void validarDisponibilidad(Habitacion habitacion, Instant checkIn, Instant checkOut) {
+        // La reserva puede referenciar la habitación por su _id de MongoDB (flujo REST)
+        // o por su habitacionId numérico como String (eventos de cierre de hotel).
         Query query = new Query();
-        query.addCriteria(Criteria.where("idHabitacion").is(idHabitacion)
+        query.addCriteria(Criteria.where("idHabitacion").in(habitacion.getId(), String.valueOf(habitacion.getHabitacionId()))
                 .and("estadoReserva").in(
                         EstadoReserva.RESERVADA,
                         EstadoReserva.CONFIRMADA, 

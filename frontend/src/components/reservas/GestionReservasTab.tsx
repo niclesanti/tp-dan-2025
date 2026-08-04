@@ -151,7 +151,7 @@ export function GestionReservasTab() {
                       <EstadoBadge estado={r.estadoReserva} />
                     </TableCell>
                     <TableCell className="font-medium">
-                      USD {r.precioTotal.toLocaleString("es-AR")}
+                      USD {r.precioTotal?.toLocaleString("es-AR") ?? "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

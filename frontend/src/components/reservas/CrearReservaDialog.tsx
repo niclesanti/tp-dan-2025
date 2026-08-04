@@ -97,7 +97,7 @@ export function CrearReservaDialog({
                   <Badge variant="outline">{habitacion.tipoHabitacion}</Badge>
                 </div>
                 <p className="mt-1 text-sm font-medium text-foreground">
-                  USD {habitacion.precioNoche.toLocaleString("es-AR")} / noche
+                  USD {habitacion.precioNoche?.toLocaleString("es-AR") ?? "—"} / noche
                 </p>
               </div>
             )}

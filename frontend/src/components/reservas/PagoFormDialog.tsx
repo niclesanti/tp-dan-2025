@@ -91,7 +91,7 @@ export function PagoFormDialog({
               <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground">Monto pendiente</p>
                 <p className="text-lg font-semibold text-foreground">
-                  USD {montoPendiente.toLocaleString("es-AR")}
+                  USD {montoPendiente?.toLocaleString("es-AR") ?? "—"}
                 </p>
               </div>
             )}

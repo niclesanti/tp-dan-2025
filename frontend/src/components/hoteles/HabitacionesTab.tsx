@@ -289,7 +289,7 @@ function TarifaPopover({ habitacionId }: { habitacionId: number }) {
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">Tarifa Vigente</p>
             <p className="text-lg font-bold text-foreground">
-              ${tarifa.precioNoche.toLocaleString("es-AR")} <span className="text-xs font-normal text-muted-foreground">/ noche</span>
+              ${tarifa.precioNoche?.toLocaleString("es-AR") ?? "—"} <span className="text-xs font-normal text-muted-foreground">/ noche</span>
             </p>
             <p className="text-xs text-muted-foreground">
               Válida: {tarifa.fechaInicio} — {tarifa.fechaFin}

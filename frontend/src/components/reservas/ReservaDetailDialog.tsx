@@ -135,10 +135,10 @@ export function ReservaDetailDialog({
                     <div>
                       <p className="text-xs text-muted-foreground">Precio</p>
                       <p className="font-medium text-foreground">
-                        USD {reserva.precioNoche.toLocaleString("es-AR")} / noche
+                        USD {reserva.precioNoche?.toLocaleString("es-AR") ?? "—"} / noche
                       </p>
                       <p className="text-sm font-semibold text-foreground">
-                        Total: USD {reserva.precioTotal.toLocaleString("es-AR")}
+                        Total: USD {reserva.precioTotal?.toLocaleString("es-AR") ?? "—"}
                       </p>
                     </div>
                   </div>
@@ -193,14 +193,14 @@ export function ReservaDetailDialog({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Total pagado:</span>
                       <span className="font-medium text-foreground">
-                        USD {totalPagado.toLocaleString("es-AR")}
+                        USD {totalPagado?.toLocaleString("es-AR") ?? "—"}
                       </span>
                     </div>
                     {montoPendiente > 0 && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Pendiente:</span>
                         <span className="font-medium text-yellow-400">
-                          USD {montoPendiente.toLocaleString("es-AR")}
+                          USD {montoPendiente?.toLocaleString("es-AR") ?? "—"}
                         </span>
                       </div>
                     )}
