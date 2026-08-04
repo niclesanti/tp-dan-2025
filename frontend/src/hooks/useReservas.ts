@@ -31,13 +31,13 @@ export function useBuscarHabitacionesDisponibles(
 }
 
 export function useReservasPorHuesped(
-  huespedId: string,
+  dni: string,
   params?: { page?: number; size?: number }
 ) {
   return useQuery({
-    queryKey: ["reservas-huesped", huespedId, params],
-    queryFn: () => reservaService.buscarReservasPorHuesped(huespedId, params),
-    enabled: !!huespedId,
+    queryKey: ["reservas-huesped", dni, params],
+    queryFn: () => reservaService.buscarReservasPorHuesped(dni, params),
+    enabled: !!dni,
     staleTime: 30 * 1000,
   });
 }

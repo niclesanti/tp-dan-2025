@@ -24,9 +24,9 @@ export const ESTADO_RESERVA_LABELS: Record<EstadoReserva, string> = {
 // --- Reservas ---
 
 export interface HuespedReserva {
-  idUsuario: string;
   nombreApellido: string;
   email: string;
+  dni: string;
 }
 
 export interface TarifaReserva {

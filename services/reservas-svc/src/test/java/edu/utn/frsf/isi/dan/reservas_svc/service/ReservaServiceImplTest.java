@@ -11,11 +11,13 @@ import edu.utn.frsf.isi.dan.reservas_svc.repository.HabitacionRepository;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.ReservaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ class ReservaServiceImplTest {
 
     @Test
     void crearReservaShouldFailWhenCheckoutIsBeforeCheckin() {
-        var req = new ReservaDTORequest("hab-1", Instant.now().plusSeconds(1000), Instant.now().plusSeconds(900), TestDataFactory.huesped());
+        var req = new ReservaDTORequest("hab-1", Instant.now().plusSeconds(1000), Instant.now().plusSeconds(900), TestDataFactory.huespedDTORequest());
         assertThatThrownBy(() -> reservaService.crearReserva(req)).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -68,13 +70,13 @@ class ReservaServiceImplTest {
     void crearReservaShouldCreateInReservadaAndAddToRoomList() {
         var req = TestDataFactory.reservaDTORequest();
         var habitacion = TestDataFactory.habitacion();
-        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(req.huesped()).build();
+        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(TestDataFactory.huesped()).build();
         var saved = Reserva.builder()
                 ._id("r1")
                 .idHabitacion("hab-1")
                 .checkIn(req.checkIn())
                 .checkOut(req.checkOut())
-                .huesped(req.huesped())
+                .huesped(TestDataFactory.huesped())
                 .estadoReserva(EstadoReserva.RESERVADA)
                 .precioTotal(100.0)
                 .build();
@@ -96,8 +98,8 @@ class ReservaServiceImplTest {
         var req = TestDataFactory.reservaDTORequest();
         var habitacion = TestDataFactory.habitacion();
         habitacion.setReservas(null);
-        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(req.huesped()).build();
-        var saved = Reserva.builder()._id("r2").idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(req.huesped())
+        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(TestDataFactory.huesped()).build();
+        var saved = Reserva.builder()._id("r2").idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(TestDataFactory.huesped())
                 .estadoReserva(EstadoReserva.RESERVADA).precioTotal(100.0).build();
 
         when(habitacionRepository.findById("hab-1")).thenReturn(Optional.of(habitacion), Optional.of(habitacion));
@@ -390,8 +392,12 @@ class ReservaServiceImplTest {
         when(mongoTemplate.count(any(), eq(Reserva.class))).thenReturn(1L);
         when(mongoTemplate.find(any(), any())).thenReturn(List.of(TestDataFactory.reserva()));
         when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
-        var page = reservaService.buscarReservasPorHuesped("h1", PageRequest.of(0, 10));
+        var page = reservaService.buscarReservasPorHuesped("12345678", PageRequest.of(0, 10));
         assertThat(page.getContent()).hasSize(1);
+
+        var queryCaptor = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).count(queryCaptor.capture(), eq(Reserva.class));
+        assertThat(queryCaptor.getValue().getQueryObject().get("huesped.dni")).isEqualTo("12345678");
     }
 
     @Test

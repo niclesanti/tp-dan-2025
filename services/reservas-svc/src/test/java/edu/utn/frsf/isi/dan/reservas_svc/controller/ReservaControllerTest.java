@@ -63,9 +63,9 @@ class ReservaControllerTest {
 
     @Test
     void getByHuespedShouldReturn200() throws Exception {
-        when(reservaService.buscarReservasPorHuesped(eq("h1"), any(Pageable.class)))
+        when(reservaService.buscarReservasPorHuesped(eq("12345678"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(TestDataFactory.reservaDTOResponse())));
-        mockMvc.perform(get("/reservas/huesped/h1"))
+        mockMvc.perform(get("/reservas/huesped/dni/12345678"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value("r1"));
     }

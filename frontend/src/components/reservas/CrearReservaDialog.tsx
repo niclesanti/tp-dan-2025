@@ -41,6 +41,7 @@ export function CrearReservaDialog({
     defaultValues: {
       nombreApellido: "",
       email: "",
+      dni: "",
       checkIn: checkInDefault ?? "",
       checkOut: checkOutDefault ?? "",
     },
@@ -51,6 +52,7 @@ export function CrearReservaDialog({
       form.reset({
         nombreApellido: "",
         email: "",
+        dni: "",
         checkIn: checkInDefault ?? "",
         checkOut: checkOutDefault ?? "",
       });
@@ -66,9 +68,9 @@ export function CrearReservaDialog({
         checkIn: new Date(data.checkIn).toISOString(),
         checkOut: new Date(data.checkOut).toISOString(),
         huesped: {
-          idUsuario: data.email,
           nombreApellido: data.nombreApellido,
           email: data.email,
+          dni: data.dni,
         },
       },
       {
@@ -125,6 +127,17 @@ export function CrearReservaDialog({
                     placeholder="juan@email.com"
                   />
                   <FieldError errors={[form.formState.errors.email]} />
+                </Field>
+
+                <Field>
+                  <FieldLabel>DNI del huésped *</FieldLabel>
+                  <Input
+                    {...form.register("dni")}
+                    inputMode="numeric"
+                    placeholder="12345678"
+                    maxLength={8}
+                  />
+                  <FieldError errors={[form.formState.errors.dni]} />
                 </Field>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

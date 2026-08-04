@@ -53,18 +53,18 @@ public class ReservaController {
         return ResponseEntity.ok(reserva);
     }
 
-    @Operation(summary = "Buscar reservas por huésped",
-               description = "Retorna todas las reservas de un huésped específico con paginación. Incluye reservas en todos los estados.",
+    @Operation(summary = "Buscar reservas por DNI de huésped",
+               description = "Retorna todas las reservas de un huésped específico según su DNI, con paginación. Incluye reservas en todos los estados.",
                responses = {
                    @ApiResponse(responseCode = "200", description = "Búsqueda completada exitosamente"),
                    @ApiResponse(responseCode = "400", description = "Error en los parámetros"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
-    @GetMapping("/huesped/{huespedId}")
+    @GetMapping("/huesped/dni/{dni}")
     public ResponseEntity<Page<ReservaDTOResponse>> buscarPorHuesped(
-            @PathVariable String huespedId,
+            @PathVariable String dni,
             @ParameterObject Pageable pageable) {
-        log.info("GET /reservas/huesped/{} - Buscar por huésped", huespedId);
-        var reservas = reservaService.buscarReservasPorHuesped(huespedId, pageable);
+        log.info("GET /reservas/huesped/dni/{} - Buscar por DNI de huésped", dni);
+        var reservas = reservaService.buscarReservasPorHuesped(dni, pageable);
         return ResponseEntity.ok(reservas);
     }
 

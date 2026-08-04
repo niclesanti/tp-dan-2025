@@ -1,6 +1,5 @@
 package edu.utn.frsf.isi.dan.reservas_svc.dto;
 
-import edu.utn.frsf.isi.dan.reservas_svc.model.Huesped;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +18,6 @@ public record ReservaDTORequest(
         Instant checkOut,
 
         @NotNull(message = "Los datos del huésped son obligatorios")
-        Huesped huesped
+        HuespedDTORequest huesped
 ) {
 }

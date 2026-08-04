@@ -32,10 +32,10 @@ export const reservaService = {
 
   // --- Reservas CRUD ---
 
-  buscarReservasPorHuesped: (huespedId: string, params?: { page?: number; size?: number }) =>
+  buscarReservasPorHuesped: (dni: string, params?: { page?: number; size?: number }) =>
     api
       .get<PageResponse<ReservaDTOResponse>>(
-        `${BASE_RESERVAS}/reservas/huesped/${huespedId}`,
+        `${BASE_RESERVAS}/reservas/huesped/dni/${dni}`,
         { params }
       )
       .then((r) => r.data),

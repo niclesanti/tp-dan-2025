@@ -84,9 +84,9 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     @Override
-    public Page<ReservaDTOResponse> buscarReservasPorHuesped(String huespedId, Pageable pageable) {
-        log.info("Buscando reservas para huésped ID: {}", huespedId);
-        Query query = new Query(Criteria.where("huesped.idUsuario").is(huespedId));
+    public Page<ReservaDTOResponse> buscarReservasPorHuesped(String dni, Pageable pageable) {
+        log.info("Buscando reservas para huésped con DNI: {}", dni);
+        Query query = new Query(Criteria.where("huesped.dni").is(dni));
         query.with(pageable);
         
         long total = mongoTemplate.count(query, Reserva.class);

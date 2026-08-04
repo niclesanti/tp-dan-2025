@@ -14,6 +14,7 @@ export type BuscarHabitacionesFormValues = z.infer<typeof buscarHabitacionesSche
 export const crearReservaSchema = z.object({
   nombreApellido: z.string().min(2, "Mínimo 2 caracteres").max(200),
   email: z.string().email("Email inválido"),
+  dni: z.string().regex(/^\d{7,8}$/, "El DNI debe tener 7 u 8 dígitos"),
   checkIn: z.string().min(1, "Fecha de check-in requerida"),
   checkOut: z.string().min(1, "Fecha de check-out requerida"),
 });

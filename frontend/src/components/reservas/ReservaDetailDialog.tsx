@@ -101,6 +101,9 @@ export function ReservaDetailDialog({
                       <p className="text-xs text-muted-foreground">
                         {reserva.huesped.email}
                       </p>
+                      <p className="text-xs text-muted-foreground">
+                        DNI {reserva.huesped.dni}
+                      </p>
                     </div>
                   </div>
 
