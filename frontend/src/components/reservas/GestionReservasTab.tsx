@@ -8,7 +8,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -124,7 +123,6 @@ export function GestionReservasTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
                   <TableHead>Hotel</TableHead>
                   <TableHead>Habitación</TableHead>
                   <TableHead>Check-in</TableHead>
@@ -137,11 +135,6 @@ export function GestionReservasTab() {
               <TableBody>
                 {reservas.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-mono text-xs">
-                        {r.id.slice(0, 8)}...
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       Hotel #{r.hotelId}
                     </TableCell>
