@@ -73,7 +73,7 @@ public final class TestDataFactory {
     }
 
     public static PagoDTORequest pagoDTORequest() {
-        return new PagoDTORequest("CARD", "tx-1", 50.0, "ARS");
+        return new PagoDTORequest("CARD", "tx-1", 50.0, "ARS", "1234567812345678");
     }
 
     public static ReviewDTORequest reviewDTORequest() {
@@ -98,6 +98,7 @@ public final class TestDataFactory {
                 .transactionId("tx-1")
                 .amount(Tarifa.builder().precio(50.0).moneda("ARS").build())
                 .status("APPROVED")
+                .nroTarjeta("1234567812345678")
                 .build();
     }
 

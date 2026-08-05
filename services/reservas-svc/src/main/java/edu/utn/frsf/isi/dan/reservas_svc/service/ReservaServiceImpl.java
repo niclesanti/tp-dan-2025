@@ -175,6 +175,7 @@ public class ReservaServiceImpl implements ReservaService {
                         .moneda(pagoRequest.currency())
                         .build())
                 .status("APPROVED")
+                .nroTarjeta(pagoRequest.nroTarjeta())
                 .build();
         
         if (reserva.getPagos() == null) {

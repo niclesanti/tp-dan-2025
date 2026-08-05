@@ -16,6 +16,7 @@ import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaPrincipalDTO;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -263,5 +264,20 @@ public class UserController {
         @PageableDefault(size = 10, sort = "id") Pageable pageable) {
 
         return ResponseEntity.ok(userService.listarTarjetas(huespedId, pageable));
+    }
+
+    @Operation(summary = "Obtener tarjeta principal por DNI",
+                description = "Retorna el número de la tarjeta de crédito principal de un huésped según su DNI exacto.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Número de tarjeta principal del huésped"),
+                    @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+                    @ApiResponse(responseCode = "404", description = "Usuario no encontrado, no es huésped o no tiene tarjeta principal"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
+    )
+    @GetMapping("/huesped/tarjeta-principal")
+    public ResponseEntity<TarjetaPrincipalDTO> obtenerTarjetaPrincipalPorDni(
+        @RequestParam @NotNull(message = "El DNI no puede ser nulo") String dni) {
+
+        return ResponseEntity.ok(userService.obtenerTarjetaPrincipalPorDni(dni));
     }
 }

@@ -26,6 +26,10 @@ export interface TarjetaCredito {
   nombreBanco: string;
 }
 
+export interface TarjetaPrincipalDTO {
+  numero: string;
+}
+
 export interface CuentaBancaria {
   id: number;
   numeroCuenta: string;

@@ -14,6 +14,7 @@ import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaPrincipalDTO;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.exception.TarjetaPrincipalException;
 import edu.utn.frsf.isi.dan.user.mapper.CuentaBancariaMapper;
@@ -452,6 +453,28 @@ public class UserServiceImpl implements UserService {
         log.info("Listado de tarjetas del huésped {} retornó {} resultados en página {}/{}",
                 huespedId, resultado.getNumberOfElements(), resultado.getNumber() + 1, resultado.getTotalPages());
         return resultado;
+    }
+
+    /**
+     * Obtiene el número de la tarjeta de crédito principal de un huésped buscándolo por DNI.
+     *
+     * @param dni DNI exacto del huésped
+     * @return DTO con el número de la tarjeta de crédito principal del huésped
+     * @throws EntityNotFoundException si el DNI no existe, el usuario no es huésped o no tiene tarjeta principal
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public TarjetaPrincipalDTO obtenerTarjetaPrincipalPorDni(String dni) {
+        log.info("Obteniendo tarjeta principal para huésped con DNI: {}", dni);
+        var usuario = usuarioRepository.findByDni(dni)
+                .orElseThrow(() -> new EntityNotFoundException("No se encontró usuario con DNI: " + dni));
+        if (!(usuario instanceof Huesped huesped)) {
+            throw new EntityNotFoundException("El usuario con DNI " + dni + " no es un huésped");
+        }
+        var tarjeta = tarjetaCreditoRepository
+                .findByHuespedIdAndEsPrincipalTrue(huesped.getId())
+                .orElseThrow(() -> new EntityNotFoundException("El huésped con DNI " + dni + " no tiene tarjeta principal"));
+        return new TarjetaPrincipalDTO(tarjeta.getNumero());
     }
 
     // ==============================

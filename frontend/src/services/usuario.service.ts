@@ -9,6 +9,7 @@ import type {
   PropietarioCreateRequest,
   TarjetaCredito,
   TarjetaCreditoCreateRequest,
+  TarjetaPrincipalDTO,
 } from "@/types/usuario";
 
 export const usuarioService = {
@@ -24,6 +25,13 @@ export const usuarioService = {
     api
       .get<Usuario>(`/users/users/dni/${dni}`)
       .then((r) => r.data),
+
+  obtenerTarjetaPrincipalPorDni: (dni: string) =>
+    api
+      .get<TarjetaPrincipalDTO>(`/users/users/huesped/tarjeta-principal`, {
+        params: { dni },
+      })
+      .then((r) => r.data.numero),
 
   buscarPorDni: (dni: string, page = 0, size = 10) =>
     api

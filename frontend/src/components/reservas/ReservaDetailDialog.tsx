@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useCancelarReserva, useCheckIn } from "@/hooks/useReservas";
+import { usuarioService } from "@/services/usuario.service";
 import { EstadoBadge } from "./EstadoBadge";
 import { PagoFormDialog } from "./PagoFormDialog";
 import { ReviewFormDialog } from "./ReviewFormDialog";
@@ -52,6 +55,19 @@ export function ReservaDetailDialog({
 
   const cancelarReserva = useCancelarReserva();
   const checkIn = useCheckIn();
+
+  const dniHuesped = reserva?.huesped.dni ?? "";
+
+  const {
+    data: usuarioRegistrado,
+    isLoading: verificandoUsuario,
+    isError: errorVerificacionUsuario,
+  } = useQuery({
+    queryKey: ["usuario-dni", dniHuesped],
+    queryFn: () => usuarioService.buscarPorDniExacto(dniHuesped),
+    enabled: open && !!dniHuesped,
+    retry: false,
+  });
 
   if (!reserva) return null;
 
@@ -154,16 +170,28 @@ export function ReservaDetailDialog({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-medium text-foreground">Pagos</h3>
-                  {["RESERVADA", "CONFIRMADA", "ADEUDADA"].includes(reserva.estadoReserva) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPagoOpen(true)}
-                    >
-                      <CreditCard className="mr-1 size-3" />
-                      Agregar Pago
-                    </Button>
-                  )}
+                  {["RESERVADA", "CONFIRMADA", "ADEUDADA"].includes(reserva.estadoReserva) &&
+                    (verificandoUsuario ? (
+                      <Button variant="outline" size="sm" disabled>
+                        <Spinner className="mr-1 size-3" />
+                        Verificando...
+                      </Button>
+                    ) : usuarioRegistrado ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPagoOpen(true)}
+                      >
+                        <CreditCard className="mr-1 size-3" />
+                        Agregar Pago
+                      </Button>
+                    ) : (
+                      errorVerificacionUsuario && (
+                        <span className="text-xs text-muted-foreground">
+                          El huésped no está registrado en el sistema
+                        </span>
+                      )
+                    ))}
                 </div>
 
                 {reserva.pagos.length === 0 ? (
@@ -301,6 +329,7 @@ export function ReservaDetailDialog({
         onOpenChange={setPagoOpen}
         reservaId={reserva.id}
         montoPendiente={montoPendiente}
+        dni={reserva.huesped.dni}
       />
 
       <ReviewFormDialog

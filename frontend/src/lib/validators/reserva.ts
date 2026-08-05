@@ -25,7 +25,8 @@ export const pagoSchema = z.object({
   method: z.string().min(1, "Método de pago requerido"),
   transactionId: z.string().min(1, "ID de transacción requerido"),
   amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
-  currency: z.string().min(1, "Moneda requerida"),
+  currency: z.literal("USD"),
+  nroTarjeta: z.string().optional(),
 });
 
 export type PagoFormValues = z.infer<typeof pagoSchema>;

@@ -681,4 +681,67 @@ class UserServiceImplTest {
                     .hasMessageContaining("99");
         }
     }
+
+    @Nested
+    @DisplayName("obtenerTarjetaPrincipalPorDni")
+    class ObtenerTarjetaPrincipalPorDni {
+
+        @Test
+        @DisplayName("Debe retornar el número de la tarjeta principal cuando el huésped existe")
+        void debeRetornarNumeroTarjetaPrincipal() {
+            Huesped huesped = TestDataFactory.huesped();
+            Banco banco = TestDataFactory.banco();
+            TarjetaCredito tarjeta = TestDataFactory.tarjetaCredito(huesped, banco, true);
+
+            when(usuarioRepository.findByDni("12345678")).thenReturn(Optional.of(huesped));
+            when(tarjetaCreditoRepository.findByHuespedIdAndEsPrincipalTrue(1))
+                    .thenReturn(Optional.of(tarjeta));
+
+            TarjetaPrincipalDTO result = userService.obtenerTarjetaPrincipalPorDni("12345678");
+
+            assertThat(result.numero()).isEqualTo("4111111111111111");
+            verify(usuarioRepository).findByDni("12345678");
+            verify(tarjetaCreditoRepository).findByHuespedIdAndEsPrincipalTrue(1);
+        }
+
+        @Test
+        @DisplayName("Debe lanzar EntityNotFoundException cuando el DNI no existe")
+        void debeLanzarExcepcionSiDniNoExiste() {
+            when(usuarioRepository.findByDni("00000000")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.obtenerTarjetaPrincipalPorDni("00000000"))
+                    .isInstanceOf(EntityNotFoundException.class)
+                    .hasMessageContaining("00000000");
+
+            verify(tarjetaCreditoRepository, never()).findByHuespedIdAndEsPrincipalTrue(any());
+        }
+
+        @Test
+        @DisplayName("Debe lanzar EntityNotFoundException cuando el usuario no es un huésped")
+        void debeLanzarExcepcionSiUsuarioNoEsHuesped() {
+            Propietario propietario = TestDataFactory.propietario();
+
+            when(usuarioRepository.findByDni("87654321")).thenReturn(Optional.of(propietario));
+
+            assertThatThrownBy(() -> userService.obtenerTarjetaPrincipalPorDni("87654321"))
+                    .isInstanceOf(EntityNotFoundException.class)
+                    .hasMessageContaining("no es un huésped");
+
+            verify(tarjetaCreditoRepository, never()).findByHuespedIdAndEsPrincipalTrue(any());
+        }
+
+        @Test
+        @DisplayName("Debe lanzar EntityNotFoundException cuando el huésped no tiene tarjeta principal")
+        void debeLanzarExcepcionSiHuespedNoTieneTarjetaPrincipal() {
+            Huesped huesped = TestDataFactory.huesped();
+
+            when(usuarioRepository.findByDni("12345678")).thenReturn(Optional.of(huesped));
+            when(tarjetaCreditoRepository.findByHuespedIdAndEsPrincipalTrue(1))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.obtenerTarjetaPrincipalPorDni("12345678"))
+                    .isInstanceOf(EntityNotFoundException.class)
+                    .hasMessageContaining("no tiene tarjeta principal");
+        }
+    }
 }

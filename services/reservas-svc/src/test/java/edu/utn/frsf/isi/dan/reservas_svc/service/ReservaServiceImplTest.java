@@ -239,6 +239,8 @@ class ReservaServiceImplTest {
         reservaService.agregarPago("r1", TestDataFactory.pagoDTORequest());
 
         assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.CONFIRMADA);
+        assertThat(reserva.getPagos()).hasSize(1);
+        assertThat(reserva.getPagos().get(0).getNroTarjeta()).isEqualTo("1234567812345678");
     }
 
     @Test

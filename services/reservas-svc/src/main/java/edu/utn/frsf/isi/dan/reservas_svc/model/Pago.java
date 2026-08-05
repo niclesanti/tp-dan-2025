@@ -14,5 +14,5 @@ public class Pago {
     private String transactionId;
     private Tarifa amount;
     private String status;
-
+    private String nroTarjeta;
 }
