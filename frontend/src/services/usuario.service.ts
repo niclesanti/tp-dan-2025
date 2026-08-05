@@ -7,9 +7,9 @@ import type {
   HuespedUpdateRequest,
   Propietario,
   PropietarioCreateRequest,
-  PropietarioUpdateRequest,
   TarjetaCredito,
   TarjetaCreditoCreateRequest,
+  TarjetaPrincipalDTO,
 } from "@/types/usuario";
 
 export const usuarioService = {
@@ -25,6 +25,13 @@ export const usuarioService = {
     api
       .get<Usuario>(`/users/users/dni/${dni}`)
       .then((r) => r.data),
+
+  obtenerTarjetaPrincipalPorDni: (dni: string) =>
+    api
+      .get<TarjetaPrincipalDTO>(`/users/users/huesped/tarjeta-principal`, {
+        params: { dni },
+      })
+      .then((r) => r.data.numero),
 
   buscarPorDni: (dni: string, page = 0, size = 10) =>
     api
@@ -52,14 +59,6 @@ export const usuarioService = {
     api
       .post<Propietario>("/users/users/propietario", data)
       .then((r) => r.data),
-
-  actualizarPropietario: (id: number, data: PropietarioUpdateRequest) =>
-    api
-      .put<Propietario>(`/users/users/propietario/${id}`, data)
-      .then((r) => r.data),
-
-  eliminarPropietario: (id: number) =>
-    api.delete(`/users/users/propietario/${id}`),
 
   // --- Tarjetas de crédito ---
   listarTarjetas: (huespedId: number, page = 0, size = 10) =>

@@ -15,4 +15,6 @@ public interface TarjetaCreditoRepository extends JpaRepository<TarjetaCredito, 
     Optional<TarjetaCredito> findByHuespedIdAndEsPrincipalTrue(Integer huespedId);
 
     Page<TarjetaCredito> findByHuespedId(Integer huespedId, Pageable pageable);
+
+    boolean existsByBancoId(Integer bancoId);
 }

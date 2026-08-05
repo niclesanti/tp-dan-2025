@@ -5,6 +5,7 @@ import edu.utn.frsf.isi.dan.user.TestDataFactory;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.BancoDTOUpdate;
+import edu.utn.frsf.isi.dan.user.exception.BancoEnUsoException;
 import edu.utn.frsf.isi.dan.user.service.BancoService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -166,6 +167,17 @@ class BancoControllerTest {
 
             mockMvc.perform(delete("/bancos/99"))
                     .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Debe retornar 409 cuando el banco está en uso por tarjetas o cuentas")
+        void debeRetornar409CuandoBancoEnUso() throws Exception {
+            doThrow(new BancoEnUsoException("No se puede eliminar el banco con ID: 1 porque está en uso por tarjetas de crédito o cuentas bancarias"))
+                    .when(bancoService).eliminarBanco(1);
+
+            mockMvc.perform(delete("/bancos/1"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value("No se puede eliminar el banco con ID: 1 porque está en uso por tarjetas de crédito o cuentas bancarias"));
         }
     }
 

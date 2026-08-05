@@ -549,6 +549,34 @@ class UserControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("GET /users/huesped/tarjeta-principal")
+    class GetTarjetaPrincipal {
+
+        @Test
+        @DisplayName("Debe retornar 200 con el número de la tarjeta principal")
+        void debeRetornarNumeroTarjetaPrincipal() throws Exception {
+            when(userService.obtenerTarjetaPrincipalPorDni("12345678"))
+                    .thenReturn(new TarjetaPrincipalDTO("4111111111111111"));
+
+            mockMvc.perform(get("/users/huesped/tarjeta-principal").param("dni", "12345678"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.numero").value("4111111111111111"));
+
+            verify(userService).obtenerTarjetaPrincipalPorDni("12345678");
+        }
+
+        @Test
+        @DisplayName("Debe retornar 404 cuando el servicio lanza EntityNotFoundException")
+        void debeRetornar404CuandoNoHayTarjetaPrincipal() throws Exception {
+            when(userService.obtenerTarjetaPrincipalPorDni("00000000"))
+                    .thenThrow(new EntityNotFoundException("No se encontró usuario con DNI: 00000000"));
+
+            mockMvc.perform(get("/users/huesped/tarjeta-principal").param("dni", "00000000"))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // HELPERS DE CONSTRUCCIÓN DE JSON
     // ──────────────────────────────────────────────────────────────────────

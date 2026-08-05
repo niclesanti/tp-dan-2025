@@ -26,6 +26,10 @@ export interface TarjetaCredito {
   nombreBanco: string;
 }
 
+export interface TarjetaPrincipalDTO {
+  numero: string;
+}
+
 export interface CuentaBancaria {
   id: number;
   numeroCuenta: string;
@@ -77,14 +81,6 @@ export interface PropietarioCreateRequest {
   telefono: string;
   dni: string;
   cuentaBancaria: CuentaBancariaCreateRequest;
-  idHotel: number | null;
-}
-
-export interface PropietarioUpdateRequest {
-  nombre: string;
-  email: string;
-  telefono: string;
-  dni: string;
   idHotel: number | null;
 }
 

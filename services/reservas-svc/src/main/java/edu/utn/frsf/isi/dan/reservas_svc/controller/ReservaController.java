@@ -53,18 +53,18 @@ public class ReservaController {
         return ResponseEntity.ok(reserva);
     }
 
-    @Operation(summary = "Buscar reservas por huésped",
-               description = "Retorna todas las reservas de un huésped específico con paginación. Incluye reservas en todos los estados.",
+    @Operation(summary = "Buscar reservas por DNI de huésped",
+               description = "Retorna todas las reservas de un huésped específico según su DNI, con paginación. Incluye reservas en todos los estados.",
                responses = {
                    @ApiResponse(responseCode = "200", description = "Búsqueda completada exitosamente"),
                    @ApiResponse(responseCode = "400", description = "Error en los parámetros"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
-    @GetMapping("/huesped/{huespedId}")
+    @GetMapping("/huesped/dni/{dni}")
     public ResponseEntity<Page<ReservaDTOResponse>> buscarPorHuesped(
-            @PathVariable String huespedId,
+            @PathVariable String dni,
             @ParameterObject Pageable pageable) {
-        log.info("GET /reservas/huesped/{} - Buscar por huésped", huespedId);
-        var reservas = reservaService.buscarReservasPorHuesped(huespedId, pageable);
+        log.info("GET /reservas/huesped/dni/{} - Buscar por DNI de huésped", dni);
+        var reservas = reservaService.buscarReservasPorHuesped(dni, pageable);
         return ResponseEntity.ok(reservas);
     }
 
@@ -99,6 +99,23 @@ public class ReservaController {
     public ResponseEntity<ReservaDTOResponse> realizarCheckIn(@PathVariable String id) {
         log.info("POST /reservas/{}/check-in - Realizar check-in (cliente ingresa al hotel)", id);
         var reserva = reservaService.realizarCheckIn(id);
+        return ResponseEntity.ok(reserva);
+    }
+
+    @Operation(summary = "Realizar check-out",
+               description = "Registra la salida del cliente del hotel. La reserva debe estar en estado EFECTUADA. " +
+                             "Si el huésped dejó review del host y el pago está completo, la reserva pasa a FINALIZADA; " +
+                             "de lo contrario pasa a ADEUDADA. Se valida que el check-out se realice en la fecha programada.",
+               responses = {
+                   @ApiResponse(responseCode = "200", description = "Check-out realizado exitosamente"),
+                   @ApiResponse(responseCode = "400", description = "Reserva no está en estado válido para check-out"),
+                   @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
+                   @ApiResponse(responseCode = "409", description = "Conflicto de estado o fecha (check-out antes de la fecha programada)"),
+                   @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
+    @PostMapping("/{id}/check-out")
+    public ResponseEntity<ReservaDTOResponse> realizarCheckOut(@PathVariable String id) {
+        log.info("POST /reservas/{}/check-out - Realizar check-out (cliente sale del hotel)", id);
+        var reserva = reservaService.realizarCheckOut(id);
         return ResponseEntity.ok(reserva);
     }
 

@@ -6,7 +6,7 @@ import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = HuespedMapper.class)
 public interface ReservaMapper {
 
     @Mapping(source = "_id", target = "id")

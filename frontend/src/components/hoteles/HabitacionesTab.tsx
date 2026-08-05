@@ -152,7 +152,6 @@ export function HabitacionesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">ID</TableHead>
                   <TableHead>Nro.</TableHead>
                   <TableHead>Piso</TableHead>
                   <TableHead>Tipo</TableHead>
@@ -164,9 +163,6 @@ export function HabitacionesTab() {
               <TableBody>
                 {habitaciones.map((hab) => (
                   <TableRow key={hab.id}>
-                    <TableCell>
-                      <Badge variant="secondary">{hab.id}</Badge>
-                    </TableCell>
                     <TableCell className="font-medium">{hab.numero}</TableCell>
                     <TableCell className="text-muted-foreground">{hab.piso}</TableCell>
                     <TableCell>
@@ -293,7 +289,7 @@ function TarifaPopover({ habitacionId }: { habitacionId: number }) {
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">Tarifa Vigente</p>
             <p className="text-lg font-bold text-foreground">
-              ${tarifa.precioNoche.toLocaleString("es-AR")} <span className="text-xs font-normal text-muted-foreground">/ noche</span>
+              ${tarifa.precioNoche?.toLocaleString("es-AR") ?? "—"} <span className="text-xs font-normal text-muted-foreground">/ noche</span>
             </p>
             <p className="text-xs text-muted-foreground">
               Válida: {tarifa.fechaInicio} — {tarifa.fechaFin}

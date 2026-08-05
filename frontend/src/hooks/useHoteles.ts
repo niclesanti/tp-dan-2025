@@ -162,3 +162,14 @@ export function useEliminarHabitacion() {
     onError: (err: Error) => toast.error(err.message),
   });
 }
+
+const HOTELES_DROPDOWN_PARAMS = { page: 0, size: 1000 } as const;
+
+export function useHotelesDropdown() {
+  return useQuery({
+    queryKey: ["hoteles", "dropdown", HOTELES_DROPDOWN_PARAMS],
+    queryFn: () => hotelService.buscarHoteles(HOTELES_DROPDOWN_PARAMS),
+    select: (data) => data.content,
+    staleTime: 10 * 60 * 1000,
+  });
+}

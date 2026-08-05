@@ -11,11 +11,13 @@ public interface ReservaService {
     
     ReservaDTOResponse buscarReservaPorId(String id);
     
-    Page<ReservaDTOResponse> buscarReservasPorHuesped(String huespedId, Pageable pageable);
+    Page<ReservaDTOResponse> buscarReservasPorHuesped(String dni, Pageable pageable);
     
     ReservaDTOResponse actualizarEstadoReserva(String id, EstadoReserva nuevoEstado);
     
     ReservaDTOResponse realizarCheckIn(String id);
+
+    ReservaDTOResponse realizarCheckOut(String id);
     
     ReservaDTOResponse agregarPago(String id, PagoDTORequest pagoRequest);
     

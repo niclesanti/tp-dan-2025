@@ -144,7 +144,7 @@ public class HabitacionServiceImpl implements HabitacionService {
         
         // Filtrar las que NO tienen reservas conflictivas
         List<Habitacion> disponibles = todasHabitaciones.stream()
-                .filter(hab -> esHabitacionDisponible(String.valueOf(hab.getHabitacionId()), checkIn, checkOut))
+                .filter(hab -> esHabitacionDisponible(hab, checkIn, checkOut))
                 .collect(Collectors.toList());
         
         // Aplicar paginación
@@ -166,7 +166,7 @@ public class HabitacionServiceImpl implements HabitacionService {
     private Habitacion mapFromHabitacion(HabitacionDTO dto) {
         return Habitacion.builder()
                 .habitacionId(dto.getHabitacionId())
-                .precioNoche(dto.getPrecioNoche())
+                .precioNoche(dto.getPrecioNoche() != null ? dto.getPrecioNoche() : 0.0)
                 .capacidad(dto.getCapacidad())
                 .amenities(dto.getAmenities())
                 .idTipoHabitacion(dto.getTipoHabitacionId())
@@ -226,10 +226,13 @@ public class HabitacionServiceImpl implements HabitacionService {
         log.info("Precio actualizado para tipo habitación ID: {}", tarifaDTO.getTipoHabitacionId());
     }
     
-    private boolean esHabitacionDisponible(String idHabitacion, Instant checkIn, Instant checkOut) {
+    private boolean esHabitacionDisponible(Habitacion habitacion, Instant checkIn, Instant checkOut) {
+        // La reserva puede referenciar la habitación por su _id de MongoDB (flujo REST)
+        // o por su habitacionId numérico como String (eventos de cierre de hotel).
+        // Se consulta por ambos identificadores para detectar cualquier reserva conflictiva.
         Query reservaQuery = new Query();
         reservaQuery.addCriteria(
-                Criteria.where("idHabitacion").is(idHabitacion)
+                Criteria.where("idHabitacion").in(habitacion.getId(), String.valueOf(habitacion.getHabitacionId()))
                         .and("estadoReserva").in(
                                 EstadoReserva.RESERVADA,
                                 EstadoReserva.CONFIRMADA, 
@@ -260,7 +263,7 @@ public class HabitacionServiceImpl implements HabitacionService {
                 .id(habitacion.getId())
                 .habitacionId(habitacion.getHabitacionId())
                 .capacidad(habitacion.getCapacidad())
-                .precioNoche(habitacion.getPrecioNoche())
+                .precioNoche(habitacion.getPrecioNoche() != null ? habitacion.getPrecioNoche() : 0.0)
                 .tipoHabitacion(habitacion.getTipoHabitacion())
                 .hotel(hotelDTO)
                 .build();

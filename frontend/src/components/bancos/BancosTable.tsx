@@ -7,7 +7,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Banco } from "@/types/usuario";
 
@@ -23,7 +22,6 @@ export function BancosTable({ bancos, onEdit, onDelete }: BancosTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">ID</TableHead>
             <TableHead>Nombre</TableHead>
             <TableHead className="w-[100px]">Acciones</TableHead>
           </TableRow>
@@ -31,9 +29,6 @@ export function BancosTable({ bancos, onEdit, onDelete }: BancosTableProps) {
         <TableBody>
           {bancos.map((b) => (
             <TableRow key={b.id}>
-              <TableCell>
-                <Badge variant="secondary">{b.id}</Badge>
-              </TableCell>
               <TableCell className="font-medium">{b.nombre}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">

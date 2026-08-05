@@ -63,9 +63,9 @@ class ReservaControllerTest {
 
     @Test
     void getByHuespedShouldReturn200() throws Exception {
-        when(reservaService.buscarReservasPorHuesped(eq("h1"), any(Pageable.class)))
+        when(reservaService.buscarReservasPorHuesped(eq("12345678"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(TestDataFactory.reservaDTOResponse())));
-        mockMvc.perform(get("/reservas/huesped/h1"))
+        mockMvc.perform(get("/reservas/huesped/dni/12345678"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value("r1"));
     }
@@ -102,6 +102,26 @@ class ReservaControllerTest {
     void cancelarShouldReturn404() throws Exception {
         doThrow(new EntityNotFoundException("x")).when(reservaService).cancelarReserva("r2");
         mockMvc.perform(delete("/reservas/r2")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void checkOutShouldReturn200() throws Exception {
+        when(reservaService.realizarCheckOut("r1")).thenReturn(TestDataFactory.reservaDTOResponse());
+        mockMvc.perform(post("/reservas/r1/check-out"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r1"));
+    }
+
+    @Test
+    void checkOutShouldReturn404() throws Exception {
+        when(reservaService.realizarCheckOut("r1")).thenThrow(new EntityNotFoundException("x"));
+        mockMvc.perform(post("/reservas/r1/check-out")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void checkOutShouldReturn409() throws Exception {
+        when(reservaService.realizarCheckOut("r1")).thenThrow(new IllegalStateException("x"));
+        mockMvc.perform(post("/reservas/r1/check-out")).andExpect(status().isConflict());
     }
 }
 
