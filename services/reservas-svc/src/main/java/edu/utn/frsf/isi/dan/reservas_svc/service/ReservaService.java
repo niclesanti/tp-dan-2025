@@ -16,6 +16,8 @@ public interface ReservaService {
     ReservaDTOResponse actualizarEstadoReserva(String id, EstadoReserva nuevoEstado);
     
     ReservaDTOResponse realizarCheckIn(String id);
+
+    ReservaDTOResponse realizarCheckOut(String id);
     
     ReservaDTOResponse agregarPago(String id, PagoDTORequest pagoRequest);
     

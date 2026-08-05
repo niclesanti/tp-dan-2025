@@ -64,6 +64,11 @@ export const reservaService = {
       .post<ReservaDTOResponse>(`${BASE_RESERVAS}/reservas/${id}/check-in`)
       .then((r) => r.data),
 
+  checkOut: (id: string) =>
+    api
+      .post<ReservaDTOResponse>(`${BASE_RESERVAS}/reservas/${id}/check-out`)
+      .then((r) => r.data),
+
   agregarPago: (id: string, data: PagoDTORequest) =>
     api
       .post<ReservaDTOResponse>(`${BASE_RESERVAS}/reservas/${id}/pagos`, data)

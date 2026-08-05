@@ -91,6 +91,19 @@ export function useCheckIn() {
   });
 }
 
+export function useCheckOut() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => reservaService.checkOut(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reservas-huesped"] });
+      qc.invalidateQueries({ queryKey: ["reserva"] });
+      toast.success("Check-out realizado exitosamente");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
 export function useAgregarPago() {
   const qc = useQueryClient();
   return useMutation({

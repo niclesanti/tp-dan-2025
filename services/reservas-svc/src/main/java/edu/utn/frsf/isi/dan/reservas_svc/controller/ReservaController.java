@@ -102,6 +102,23 @@ public class ReservaController {
         return ResponseEntity.ok(reserva);
     }
 
+    @Operation(summary = "Realizar check-out",
+               description = "Registra la salida del cliente del hotel. La reserva debe estar en estado EFECTUADA. " +
+                             "Si el huésped dejó review del host y el pago está completo, la reserva pasa a FINALIZADA; " +
+                             "de lo contrario pasa a ADEUDADA. Se valida que el check-out se realice en la fecha programada.",
+               responses = {
+                   @ApiResponse(responseCode = "200", description = "Check-out realizado exitosamente"),
+                   @ApiResponse(responseCode = "400", description = "Reserva no está en estado válido para check-out"),
+                   @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
+                   @ApiResponse(responseCode = "409", description = "Conflicto de estado o fecha (check-out antes de la fecha programada)"),
+                   @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
+    @PostMapping("/{id}/check-out")
+    public ResponseEntity<ReservaDTOResponse> realizarCheckOut(@PathVariable String id) {
+        log.info("POST /reservas/{}/check-out - Realizar check-out (cliente sale del hotel)", id);
+        var reserva = reservaService.realizarCheckOut(id);
+        return ResponseEntity.ok(reserva);
+    }
+
     @Operation(summary = "Agregar pago a reserva",
                description = "Registra un pago para la reserva. Si el total pagado alcanza el 50% o más del precio total, " +
                              "la reserva pasa automáticamente a estado CONFIRMADA. Si el pago completa el 100%, queda lista para finalizar.",

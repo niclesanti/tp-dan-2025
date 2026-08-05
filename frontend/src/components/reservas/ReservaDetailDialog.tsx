@@ -24,13 +24,14 @@ import {
   CreditCard,
   Star,
   LogIn,
+  LogOut,
   XCircle,
   User,
   Building2,
   Calendar,
   DollarSign,
 } from "lucide-react";
-import { useCancelarReserva, useCheckIn } from "@/hooks/useReservas";
+import { useCancelarReserva, useCheckIn, useCheckOut } from "@/hooks/useReservas";
 import { usuarioService } from "@/services/usuario.service";
 import { EstadoBadge } from "./EstadoBadge";
 import { PagoFormDialog } from "./PagoFormDialog";
@@ -50,11 +51,14 @@ export function ReservaDetailDialog({
 }: ReservaDetailDialogProps) {
   const [pagoOpen, setPagoOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [hostReviewOpen, setHostReviewOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [checkInConfirmOpen, setCheckInConfirmOpen] = useState(false);
+  const [checkOutConfirmOpen, setCheckOutConfirmOpen] = useState(false);
 
   const cancelarReserva = useCancelarReserva();
   const checkIn = useCheckIn();
+  const checkOut = useCheckOut();
 
   const dniHuesped = reserva?.huesped.dni ?? "";
 
@@ -87,6 +91,14 @@ export function ReservaDetailDialog({
     checkIn.mutate(reserva.id, {
       onSuccess: () => {
         setCheckInConfirmOpen(false);
+      },
+    });
+  };
+
+  const handleCheckOut = () => {
+    checkOut.mutate(reserva.id, {
+      onSuccess: () => {
+        setCheckOutConfirmOpen(false);
       },
     });
   };
@@ -245,17 +257,30 @@ export function ReservaDetailDialog({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-medium text-foreground">Reviews</h3>
-                  {["EFECTUADA", "FINALIZADA"].includes(reserva.estadoReserva) &&
-                    !reserva.clientReview && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setReviewOpen(true)}
-                      >
-                        <Star className="mr-1 size-3" />
-                        Agregar Review
-                      </Button>
-                    )}
+                  <div className="flex gap-2">
+                    {["EFECTUADA", "ADEUDADA", "FINALIZADA"].includes(reserva.estadoReserva) &&
+                      !reserva.clientReview && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setReviewOpen(true)}
+                        >
+                          <Star className="mr-1 size-3" />
+                          Agregar Review
+                        </Button>
+                      )}
+                    {["EFECTUADA", "ADEUDADA", "FINALIZADA"].includes(reserva.estadoReserva) &&
+                      !reserva.hostReview && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setHostReviewOpen(true)}
+                        >
+                          <Star className="mr-1 size-3" />
+                          Agregar Review del Host
+                        </Button>
+                      )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -308,6 +333,13 @@ export function ReservaDetailDialog({
                   </Button>
                 )}
 
+                {reserva.estadoReserva === "EFECTUADA" && (
+                  <Button onClick={() => setCheckOutConfirmOpen(true)} disabled={checkOut.isPending}>
+                    <LogOut className="mr-1 size-4" />
+                    Check-out
+                  </Button>
+                )}
+
                 {reserva.estadoReserva === "RESERVADA" && (
                   <Button
                     variant="destructive"
@@ -335,6 +367,13 @@ export function ReservaDetailDialog({
       <ReviewFormDialog
         open={reviewOpen}
         onOpenChange={setReviewOpen}
+        reservaId={reserva.id}
+      />
+
+      <ReviewFormDialog
+        tipo="host"
+        open={hostReviewOpen}
+        onOpenChange={setHostReviewOpen}
         reservaId={reserva.id}
       />
 
@@ -375,6 +414,27 @@ export function ReservaDetailDialog({
               className="bg-emerald-600 text-white hover:bg-emerald-700"
             >
               {checkIn.isPending ? "Procesando..." : "Confirmar Check-in"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={checkOutConfirmOpen} onOpenChange={setCheckOutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Realizar Check-out</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Confirmás el check-out para esta reserva? El cliente egresará del hotel. Si la review del host está registrada y el pago está completo, la reserva pasará a estado FINALIZADA; de lo contrario, pasará a estado ADEUDADA.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={checkOut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCheckOut}
+              disabled={checkOut.isPending}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {checkOut.isPending ? "Procesando..." : "Confirmar Check-out"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

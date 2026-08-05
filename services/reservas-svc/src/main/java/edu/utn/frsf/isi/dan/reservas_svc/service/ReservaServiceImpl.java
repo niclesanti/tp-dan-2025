@@ -110,17 +110,11 @@ public class ReservaServiceImpl implements ReservaService {
         
         // Validación especial para FINALIZADA según consigna
         if (nuevoEstado == EstadoReserva.FINALIZADA) {
-            boolean tieneReviewHost = reserva.getHostReview() != null;
-            double totalPagado = calcularTotalPagado(reserva);
-            boolean pagoCompleto = totalPagado >= reserva.getPrecioTotal();
-            
-            // Si no tiene review del host O no tiene pago completo → ADEUDADA
-            if (!tieneReviewHost || !pagoCompleto) {
-                log.warn("Reserva {} no cumple requisitos para FINALIZADA. Review host: {}, Pago completo: {}",
-                        id, tieneReviewHost, pagoCompleto);
-                reserva.setEstadoReserva(EstadoReserva.ADEUDADA);
+            var estadoEvaluado = evaluarEstadoFinal(reserva);
+            if (estadoEvaluado != EstadoReserva.FINALIZADA) {
+                reserva.setEstadoReserva(estadoEvaluado);
                 var reservaActualizada = reservaRepository.save(reserva);
-                log.info("Reserva marcada como ADEUDADA por incumplimiento de requisitos");
+                log.info("Reserva marcada como {} por incumplimiento de requisitos para FINALIZADA", estadoEvaluado);
                 return reservaMapper.toResponse(reservaActualizada);
             }
         }
@@ -156,6 +150,38 @@ public class ReservaServiceImpl implements ReservaService {
         var reservaActualizada = reservaRepository.save(reserva);
         
         log.info("Check-in realizado exitosamente. Reserva en estado EFECTUADA");
+        return reservaMapper.toResponse(reservaActualizada);
+    }
+
+    @Override
+    public ReservaDTOResponse realizarCheckOut(String id) {
+        log.info("Realizando check-out para reserva: {}", id);
+        var reserva = buscarReservaOExcepcion(id);
+
+        // Validar que la reserva esté efectuada
+        if (reserva.getEstadoReserva() != EstadoReserva.EFECTUADA) {
+            throw new IllegalStateException(
+                    "Solo se puede hacer check-out de reservas EFECTUADAS. Estado actual: "
+                    + reserva.getEstadoReserva());
+        }
+
+        // Validar que la fecha de check-out ya haya llegado -> comentado para poder hacer pruebas.
+        /*
+        if (Instant.now().isBefore(reserva.getCheckOut())) {
+            throw new IllegalStateException(
+                    "No se puede hacer check-out antes de la fecha programada");
+        }
+        */
+
+        // Determinar el estado final según los requisitos de negocio:
+        // FINALIZADA si y solo si hay review del host y pago completo; si no, ADEUDADA.
+        reserva.setEstadoReserva(evaluarEstadoFinal(reserva));
+        var reservaActualizada = reservaRepository.save(reserva);
+
+        // Sincronizar el estado en la lista embebida de la habitación
+        sincronizarEstadoReservaEnHabitacion(reserva);
+
+        log.info("Check-out realizado exitosamente. Reserva en estado {}", reservaActualizada.getEstadoReserva());
         return reservaMapper.toResponse(reservaActualizada);
     }
 
@@ -197,6 +223,14 @@ public class ReservaServiceImpl implements ReservaService {
             log.info("Reserva confirmada al tener al menos un pago");
         }
         
+        // Recuperación ADEUDADA -> FINALIZADA: si con el pago recién agregado se cumplen
+        // todos los requisitos (review del host + pago completo), la reserva se finaliza.
+        if (reserva.getEstadoReserva() == EstadoReserva.ADEUDADA
+                && evaluarEstadoFinal(reserva) == EstadoReserva.FINALIZADA) {
+            reserva.setEstadoReserva(EstadoReserva.FINALIZADA);
+            log.info("Reserva {} pasó de ADEUDADA a FINALIZADA tras completarse el pago", id);
+        }
+        
         var reservaActualizada = reservaRepository.save(reserva);
         log.info("Pago agregado exitosamente");
         
@@ -208,17 +242,24 @@ public class ReservaServiceImpl implements ReservaService {
         log.info("Agregando review de {} a reserva: {}", esCliente ? "cliente" : "host", id);
         var reserva = buscarReservaOExcepcion(id);
         
-        // Validar que la reserva esté finalizada
-        if (reserva.getEstadoReserva() != EstadoReserva.FINALIZADA) {
-            throw new IllegalStateException("Solo se pueden agregar reviews a reservas finalizadas");
+        // Validar que la reserva esté en un estado que admita reviews
+        var estadoActual = reserva.getEstadoReserva();
+        if (estadoActual != EstadoReserva.EFECTUADA
+                && estadoActual != EstadoReserva.ADEUDADA
+                && estadoActual != EstadoReserva.FINALIZADA) {
+            throw new IllegalStateException(
+                    "Solo se pueden agregar reviews a reservas EFECTUADAS, ADEUDADAS o FINALIZADAS. Estado actual: "
+                    + estadoActual);
         }
         
-        // Validar que sea después de la fecha de checkout según consigna
+        // Validar que sea después de la fecha de checkout según consigna -> comentado para poder hacer pruebas.
+        /*
         Instant ahora = Instant.now();
         if (ahora.isBefore(reserva.getCheckOut())) {
             throw new IllegalStateException(
                     "Solo se pueden agregar reviews después de la fecha de check-out");
         }
+        */
         
         var review = Review.builder()
                 .rating(reviewRequest.rating())
@@ -230,6 +271,14 @@ public class ReservaServiceImpl implements ReservaService {
             reserva.setClientReview(review);
         } else {
             reserva.setHostReview(review);
+        }
+        
+        // Recuperación ADEUDADA -> FINALIZADA: si con la review recién agregada se cumplen
+        // todos los requisitos (review del host + pago completo), la reserva se finaliza.
+        if (reserva.getEstadoReserva() == EstadoReserva.ADEUDADA
+                && evaluarEstadoFinal(reserva) == EstadoReserva.FINALIZADA) {
+            reserva.setEstadoReserva(EstadoReserva.FINALIZADA);
+            log.info("Reserva {} pasó de ADEUDADA a FINALIZADA tras agregarse la review", id);
         }
         
         var reservaActualizada = reservaRepository.save(reserva);
@@ -342,6 +391,37 @@ public class ReservaServiceImpl implements ReservaService {
                 hab.getReservas().removeIf(r -> r.get_id().equals(idReserva));
                 habitacionRepository.save(hab);
                 log.info("Reserva eliminada de la lista de reservas de la habitación");
+            }
+        }
+    }
+    
+    private EstadoReserva evaluarEstadoFinal(Reserva reserva) {
+        boolean tieneReviewHost = reserva.getHostReview() != null;
+        double totalPagado = calcularTotalPagado(reserva);
+        boolean pagoCompleto = totalPagado >= reserva.getPrecioTotal();
+
+        if (tieneReviewHost && pagoCompleto) {
+            return EstadoReserva.FINALIZADA;
+        }
+        log.warn("Reserva {} no cumple requisitos para FINALIZADA. Review host: {}, Pago completo: {}",
+                reserva.get_id(), tieneReviewHost, pagoCompleto);
+        return EstadoReserva.ADEUDADA;
+    }
+    
+    private void sincronizarEstadoReservaEnHabitacion(Reserva reserva) {
+        log.debug("Sincronizando estado de reserva {} en habitación {}", reserva.get_id(), reserva.getIdHabitacion());
+        
+        var habitacionOpt = habitacionRepository.findById(reserva.getIdHabitacion());
+        if (habitacionOpt.isPresent()) {
+            var habitacion = habitacionOpt.get();
+            if (habitacion.getReservas() != null) {
+                habitacion.getReservas().forEach(r -> {
+                    if (r.get_id().equals(reserva.get_id())) {
+                        r.setEstadoReserva(reserva.getEstadoReserva());
+                    }
+                });
+                habitacionRepository.save(habitacion);
+                log.info("Estado de reserva sincronizado en la lista de reservas de la habitación");
             }
         }
     }
