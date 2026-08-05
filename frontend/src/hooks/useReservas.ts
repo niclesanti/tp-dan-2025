@@ -31,13 +31,13 @@ export function useBuscarHabitacionesDisponibles(
 }
 
 export function useReservasPorHuesped(
-  huespedId: string,
+  dni: string,
   params?: { page?: number; size?: number }
 ) {
   return useQuery({
-    queryKey: ["reservas-huesped", huespedId, params],
-    queryFn: () => reservaService.buscarReservasPorHuesped(huespedId, params),
-    enabled: !!huespedId,
+    queryKey: ["reservas-huesped", dni, params],
+    queryFn: () => reservaService.buscarReservasPorHuesped(dni, params),
+    enabled: !!dni,
     staleTime: 30 * 1000,
   });
 }
@@ -86,6 +86,19 @@ export function useCheckIn() {
       qc.invalidateQueries({ queryKey: ["reservas-huesped"] });
       qc.invalidateQueries({ queryKey: ["reserva"] });
       toast.success("Check-in realizado exitosamente");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useCheckOut() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => reservaService.checkOut(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reservas-huesped"] });
+      qc.invalidateQueries({ queryKey: ["reserva"] });
+      toast.success("Check-out realizado exitosamente");
     },
     onError: (err: Error) => toast.error(err.message),
   });

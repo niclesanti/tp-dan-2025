@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.reservas_svc;
 
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDisponibleDTO;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HotelSimpleDTO;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.HuespedDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTOResponse;
@@ -26,7 +27,11 @@ public final class TestDataFactory {
     }
 
     public static Huesped huesped() {
-        return Huesped.builder().idUsuario("h1").nombreApellido("Juan Perez").email("juan@email.com").build();
+        return Huesped.builder().dni("12345678").nombreApellido("Juan Perez").email("juan@email.com").build();
+    }
+
+    public static HuespedDTORequest huespedDTORequest() {
+        return new HuespedDTORequest("Juan Perez", "juan@email.com", "12345678");
     }
 
     public static Hotel hotel() {
@@ -64,11 +69,15 @@ public final class TestDataFactory {
     }
 
     public static ReservaDTORequest reservaDTORequest() {
-        return new ReservaDTORequest("hab-1", Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800), huesped());
+        return new ReservaDTORequest("hab-1", Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800), huespedDTORequest());
     }
 
     public static PagoDTORequest pagoDTORequest() {
-        return new PagoDTORequest("CARD", "tx-1", 50.0, "ARS");
+        return new PagoDTORequest("CARD", "tx-1", 50.0, "ARS", "1234567812345678");
+    }
+
+    public static PagoDTORequest pagoDTORequestSinTransactionId() {
+        return new PagoDTORequest("CARD", null, 50.0, "ARS", "1234567812345678");
     }
 
     public static ReviewDTORequest reviewDTORequest() {
@@ -93,6 +102,7 @@ public final class TestDataFactory {
                 .transactionId("tx-1")
                 .amount(Tarifa.builder().precio(50.0).moneda("ARS").build())
                 .status("APPROVED")
+                .nroTarjeta("1234567812345678")
                 .build();
     }
 

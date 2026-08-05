@@ -11,11 +11,13 @@ import edu.utn.frsf.isi.dan.reservas_svc.repository.HabitacionRepository;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.ReservaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ class ReservaServiceImplTest {
 
     @Test
     void crearReservaShouldFailWhenCheckoutIsBeforeCheckin() {
-        var req = new ReservaDTORequest("hab-1", Instant.now().plusSeconds(1000), Instant.now().plusSeconds(900), TestDataFactory.huesped());
+        var req = new ReservaDTORequest("hab-1", Instant.now().plusSeconds(1000), Instant.now().plusSeconds(900), TestDataFactory.huespedDTORequest());
         assertThatThrownBy(() -> reservaService.crearReserva(req)).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -68,13 +70,13 @@ class ReservaServiceImplTest {
     void crearReservaShouldCreateInReservadaAndAddToRoomList() {
         var req = TestDataFactory.reservaDTORequest();
         var habitacion = TestDataFactory.habitacion();
-        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(req.huesped()).build();
+        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(TestDataFactory.huesped()).build();
         var saved = Reserva.builder()
                 ._id("r1")
                 .idHabitacion("hab-1")
                 .checkIn(req.checkIn())
                 .checkOut(req.checkOut())
-                .huesped(req.huesped())
+                .huesped(TestDataFactory.huesped())
                 .estadoReserva(EstadoReserva.RESERVADA)
                 .precioTotal(100.0)
                 .build();
@@ -96,8 +98,8 @@ class ReservaServiceImplTest {
         var req = TestDataFactory.reservaDTORequest();
         var habitacion = TestDataFactory.habitacion();
         habitacion.setReservas(null);
-        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(req.huesped()).build();
-        var saved = Reserva.builder()._id("r2").idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(req.huesped())
+        var entity = Reserva.builder().idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(TestDataFactory.huesped()).build();
+        var saved = Reserva.builder()._id("r2").idHabitacion("hab-1").checkIn(req.checkIn()).checkOut(req.checkOut()).huesped(TestDataFactory.huesped())
                 .estadoReserva(EstadoReserva.RESERVADA).precioTotal(100.0).build();
 
         when(habitacionRepository.findById("hab-1")).thenReturn(Optional.of(habitacion), Optional.of(habitacion));
@@ -195,6 +197,21 @@ class ReservaServiceImplTest {
     }
 
     @Test
+    void actualizarEstadoShouldSetAdeudadaWhenRequested() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setHostReview(null);
+        reserva.setPagos(new ArrayList<>());
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.actualizarEstadoReserva("r1", EstadoReserva.ADEUDADA);
+
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.ADEUDADA);
+    }
+
+    @Test
     void realizarCheckInShouldFailWhenNotConfirmed() {
         var reserva = TestDataFactory.reserva();
         reserva.setEstadoReserva(EstadoReserva.RESERVADA);
@@ -227,6 +244,135 @@ class ReservaServiceImplTest {
     }
 
     @Test
+    void realizarCheckOutShouldThrowWhenNotFound() {
+        when(reservaRepository.findById("no")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> reservaService.realizarCheckOut("no")).isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void realizarCheckOutShouldFailWhenEstadoIsConfirmada() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.CONFIRMADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        assertThatThrownBy(() -> reservaService.realizarCheckOut("r1"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("EFECTUADAS");
+    }
+
+    @Test
+    void realizarCheckOutShouldFailWhenEstadoIsReservada() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.RESERVADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        assertThatThrownBy(() -> reservaService.realizarCheckOut("r1")).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void realizarCheckOutShouldSetFinalizadaAndSyncOnHabitacionWhenReviewAndFullPayment() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(TestDataFactory.review());
+        reserva.setPagos(List.of(TestDataFactory.pago(), TestDataFactory.pago())); // 50 + 50 = 100
+        reserva.setPrecioTotal(100.0);
+        var habitacion = TestDataFactory.habitacion();
+        habitacion.getReservas().add(Habitacion.ReservaSimple.builder()
+                ._id("r1")
+                .estadoReserva(EstadoReserva.EFECTUADA)
+                .build());
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(habitacionRepository.findById("hab-1")).thenReturn(Optional.of(habitacion));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.realizarCheckOut("r1");
+
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.FINALIZADA);
+
+        var habitacionCaptor = ArgumentCaptor.forClass(Habitacion.class);
+        verify(habitacionRepository).save(habitacionCaptor.capture());
+        assertThat(habitacionCaptor.getValue().getReservas())
+                .extracting(Habitacion.ReservaSimple::getEstadoReserva)
+                .containsExactly(EstadoReserva.FINALIZADA);
+    }
+
+    @Test
+    void realizarCheckOutShouldSetAdeudadaWhenHostReviewMissing() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(null);
+        reserva.setPagos(List.of(TestDataFactory.pago(), TestDataFactory.pago())); // 100 pagado
+        reserva.setPrecioTotal(100.0);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.realizarCheckOut("r1");
+
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.ADEUDADA);
+    }
+
+    @Test
+    void realizarCheckOutShouldSetAdeudadaWhenPaymentIncomplete() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(TestDataFactory.review());
+        reserva.setPagos(List.of(TestDataFactory.pago())); // 50 < 100
+        reserva.setPrecioTotal(100.0);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.realizarCheckOut("r1");
+
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.ADEUDADA);
+    }
+
+    @Test
+    void realizarCheckOutShouldWorkWhenHabitacionNotFound() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(TestDataFactory.review());
+        reserva.setPagos(List.of(TestDataFactory.pago(), TestDataFactory.pago()));
+        reserva.setPrecioTotal(100.0);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(habitacionRepository.findById("hab-1")).thenReturn(Optional.empty());
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.realizarCheckOut("r1");
+
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.FINALIZADA);
+        verify(habitacionRepository, org.mockito.Mockito.never()).save(any(Habitacion.class));
+    }
+
+    @Test
+    void realizarCheckOutShouldWorkWhenHabitacionHasNullReservas() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(TestDataFactory.review());
+        reserva.setPagos(List.of(TestDataFactory.pago(), TestDataFactory.pago()));
+        reserva.setPrecioTotal(100.0);
+        var habitacion = TestDataFactory.habitacion();
+        habitacion.setReservas(null);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(habitacionRepository.findById("hab-1")).thenReturn(Optional.of(habitacion));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.realizarCheckOut("r1");
+
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.FINALIZADA);
+        verify(habitacionRepository, org.mockito.Mockito.never()).save(any(Habitacion.class));
+    }
+
+    @Test
     void agregarPagoShouldConfirmReservaWhenWasReservada() {
         var reserva = TestDataFactory.reserva();
         reserva.setEstadoReserva(EstadoReserva.RESERVADA);
@@ -237,6 +383,25 @@ class ReservaServiceImplTest {
         reservaService.agregarPago("r1", TestDataFactory.pagoDTORequest());
 
         assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.CONFIRMADA);
+        assertThat(reserva.getPagos()).hasSize(1);
+        assertThat(reserva.getPagos().get(0).getNroTarjeta()).isEqualTo("1234567812345678");
+        assertThat(reserva.getPagos().get(0).getTransactionId()).isEqualTo("tx-1");
+    }
+
+    @Test
+    void agregarPagoShouldGenerateTransactionIdWhenNotProvided() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.RESERVADA);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.agregarPago("r1", TestDataFactory.pagoDTORequestSinTransactionId());
+
+        assertThat(reserva.getPagos()).hasSize(1);
+        assertThat(reserva.getPagos().get(0).getTransactionId())
+                .isNotBlank()
+                .startsWith("PAY-");
     }
 
     @Test
@@ -265,21 +430,45 @@ class ReservaServiceImplTest {
     }
 
     @Test
-    void agregarReviewShouldFailWhenReservationIsNotFinalizada() {
+    void agregarPagoOnAdeudadaWithHostReviewShouldTransitionToFinalizada() {
         var reserva = TestDataFactory.reserva();
-        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setEstadoReserva(EstadoReserva.ADEUDADA);
+        reserva.setHostReview(TestDataFactory.review());
+        reserva.setPagos(new ArrayList<>(List.of(TestDataFactory.pago()))); // 50 pagado
+        reserva.setPrecioTotal(100.0);
         when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
-        assertThatThrownBy(() -> reservaService.agregarReview("r1", TestDataFactory.reviewDTORequest(), true))
-                .isInstanceOf(IllegalStateException.class);
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.agregarPago("r1", TestDataFactory.pagoDTORequest()); // agrega 50 más -> 100
+
+        assertThat(reserva.getPagos()).hasSize(2);
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.FINALIZADA);
     }
 
     @Test
-    void agregarReviewShouldFailWhenCheckoutNotReached() {
+    void agregarPagoOnAdeudadaWithoutHostReviewShouldStayAdeudada() {
         var reserva = TestDataFactory.reserva();
-        reserva.setEstadoReserva(EstadoReserva.FINALIZADA);
-        reserva.setCheckOut(Instant.now().plusSeconds(3600));
+        reserva.setEstadoReserva(EstadoReserva.ADEUDADA);
+        reserva.setHostReview(null);
+        reserva.setPagos(new ArrayList<>(List.of(TestDataFactory.pago()))); // 50 pagado
+        reserva.setPrecioTotal(100.0);
         when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
 
+        reservaService.agregarPago("r1", TestDataFactory.pagoDTORequest()); // llega a 100 pero sin review
+
+        assertThat(reserva.getPagos()).hasSize(2);
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.ADEUDADA);
+    }
+
+    @Test
+    void agregarReviewShouldFailWhenReservationIsNotInAllowedState() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.CONFIRMADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
         assertThatThrownBy(() -> reservaService.agregarReview("r1", TestDataFactory.reviewDTORequest(), true))
                 .isInstanceOf(IllegalStateException.class);
     }
@@ -310,6 +499,57 @@ class ReservaServiceImplTest {
         reservaService.agregarReview("r1", TestDataFactory.reviewDTORequest(), true);
 
         assertThat(reserva.getClientReview()).isNotNull();
+    }
+
+    @Test
+    void agregarReviewShouldAllowEfectuadaAfterCheckout() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.EFECTUADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.agregarReview("r1", TestDataFactory.reviewDTORequest(), true);
+
+        assertThat(reserva.getClientReview()).isNotNull();
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.EFECTUADA);
+    }
+
+    @Test
+    void agregarReviewOnAdeudadaWithFullPaymentShouldTransitionToFinalizada() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.ADEUDADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(null);
+        reserva.setPagos(List.of(TestDataFactory.pago(), TestDataFactory.pago())); // 100 pagado
+        reserva.setPrecioTotal(100.0);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.agregarReview("r1", TestDataFactory.reviewDTORequest(), false); // host deja review
+
+        assertThat(reserva.getHostReview()).isNotNull();
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.FINALIZADA);
+    }
+
+    @Test
+    void agregarReviewOnAdeudadaWithIncompletePaymentShouldStayAdeudada() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.ADEUDADA);
+        reserva.setCheckOut(Instant.now().minusSeconds(3600));
+        reserva.setHostReview(null);
+        reserva.setPagos(List.of(TestDataFactory.pago())); // 50 < 100
+        reserva.setPrecioTotal(100.0);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.agregarReview("r1", TestDataFactory.reviewDTORequest(), false);
+
+        assertThat(reserva.getHostReview()).isNotNull();
+        assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.ADEUDADA);
     }
 
     @Test
@@ -390,8 +630,12 @@ class ReservaServiceImplTest {
         when(mongoTemplate.count(any(), eq(Reserva.class))).thenReturn(1L);
         when(mongoTemplate.find(any(), any())).thenReturn(List.of(TestDataFactory.reserva()));
         when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
-        var page = reservaService.buscarReservasPorHuesped("h1", PageRequest.of(0, 10));
+        var page = reservaService.buscarReservasPorHuesped("12345678", PageRequest.of(0, 10));
         assertThat(page.getContent()).hasSize(1);
+
+        var queryCaptor = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).count(queryCaptor.capture(), eq(Reserva.class));
+        assertThat(queryCaptor.getValue().getQueryObject().get("huesped.dni")).isEqualTo("12345678");
     }
 
     @Test

@@ -100,7 +100,7 @@ export function TarifasTable({
                     <Badge variant="outline">{t.tipoHabitacion.nombre}</Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    ${t.precioNoche.toLocaleString("es-AR")}{" "}
+                    ${t.precioNoche?.toLocaleString("es-AR") ?? "—"}{" "}
                     <span className="text-xs font-normal text-muted-foreground">/noche</span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

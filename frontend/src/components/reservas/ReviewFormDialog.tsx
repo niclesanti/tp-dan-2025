@@ -15,21 +15,25 @@ import { Spinner } from "@/components/ui/spinner";
 import { StarRating } from "@/components/hoteles/StarRating";
 import { reviewSchema } from "@/lib/validators/reserva";
 import type { ReviewFormValues } from "@/lib/validators/reserva";
-import { useReviewCliente } from "@/hooks/useReservas";
+import { useReviewCliente, useReviewHost } from "@/hooks/useReservas";
 
 interface ReviewFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reservaId: string;
+  tipo?: "cliente" | "host";
 }
 
 export function ReviewFormDialog({
   open,
   onOpenChange,
   reservaId,
+  tipo = "cliente",
 }: ReviewFormDialogProps) {
   const formId = useId();
   const reviewCliente = useReviewCliente();
+  const reviewHost = useReviewHost();
+  const mutation = tipo === "host" ? reviewHost : reviewCliente;
 
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
@@ -49,7 +53,7 @@ export function ReviewFormDialog({
   }, [open, form]);
 
   const handleSubmit = form.handleSubmit((data) => {
-    reviewCliente.mutate(
+    mutation.mutate(
       {
         id: reservaId,
         data: {
@@ -67,7 +71,9 @@ export function ReviewFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Review del Cliente</DialogTitle>
+          <DialogTitle>
+            {tipo === "host" ? "Review del Host" : "Review del Cliente"}
+          </DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="pr-2 pb-4">
@@ -89,7 +95,11 @@ export function ReviewFormDialog({
                   <FieldLabel>Comentario *</FieldLabel>
                   <Textarea
                     {...form.register("comment")}
-                    placeholder="Contá tu experiencia..."
+                    placeholder={
+                      tipo === "host"
+                        ? "Describí tu experiencia con el huésped..."
+                        : "Contá tu experiencia..."
+                    }
                     rows={4}
                     maxLength={500}
                   />
@@ -104,12 +114,12 @@ export function ReviewFormDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={reviewCliente.isPending}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Button>
-          <Button type="submit" form={formId} disabled={reviewCliente.isPending}>
-            {reviewCliente.isPending && <Spinner className="mr-2 size-4" />}
+          <Button type="submit" form={formId} disabled={mutation.isPending}>
+            {mutation.isPending && <Spinner className="mr-2 size-4" />}
             Enviar Review
           </Button>
         </DialogFooter>

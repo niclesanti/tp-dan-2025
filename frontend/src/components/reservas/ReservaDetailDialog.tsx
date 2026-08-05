@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,13 +24,15 @@ import {
   CreditCard,
   Star,
   LogIn,
+  LogOut,
   XCircle,
   User,
   Building2,
   Calendar,
   DollarSign,
 } from "lucide-react";
-import { useCancelarReserva, useCheckIn } from "@/hooks/useReservas";
+import { useCancelarReserva, useCheckIn, useCheckOut } from "@/hooks/useReservas";
+import { usuarioService } from "@/services/usuario.service";
 import { EstadoBadge } from "./EstadoBadge";
 import { PagoFormDialog } from "./PagoFormDialog";
 import { ReviewFormDialog } from "./ReviewFormDialog";
@@ -47,11 +51,27 @@ export function ReservaDetailDialog({
 }: ReservaDetailDialogProps) {
   const [pagoOpen, setPagoOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [hostReviewOpen, setHostReviewOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [checkInConfirmOpen, setCheckInConfirmOpen] = useState(false);
+  const [checkOutConfirmOpen, setCheckOutConfirmOpen] = useState(false);
 
   const cancelarReserva = useCancelarReserva();
   const checkIn = useCheckIn();
+  const checkOut = useCheckOut();
+
+  const dniHuesped = reserva?.huesped.dni ?? "";
+
+  const {
+    data: usuarioRegistrado,
+    isLoading: verificandoUsuario,
+    isError: errorVerificacionUsuario,
+  } = useQuery({
+    queryKey: ["usuario-dni", dniHuesped],
+    queryFn: () => usuarioService.buscarPorDniExacto(dniHuesped),
+    enabled: open && !!dniHuesped,
+    retry: false,
+  });
 
   if (!reserva) return null;
 
@@ -71,6 +91,14 @@ export function ReservaDetailDialog({
     checkIn.mutate(reserva.id, {
       onSuccess: () => {
         setCheckInConfirmOpen(false);
+      },
+    });
+  };
+
+  const handleCheckOut = () => {
+    checkOut.mutate(reserva.id, {
+      onSuccess: () => {
+        setCheckOutConfirmOpen(false);
       },
     });
   };
@@ -100,6 +128,9 @@ export function ReservaDetailDialog({
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {reserva.huesped.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        DNI {reserva.huesped.dni}
                       </p>
                     </div>
                   </div>
@@ -135,10 +166,10 @@ export function ReservaDetailDialog({
                     <div>
                       <p className="text-xs text-muted-foreground">Precio</p>
                       <p className="font-medium text-foreground">
-                        USD {reserva.precioNoche.toLocaleString("es-AR")} / noche
+                        USD {reserva.precioNoche?.toLocaleString("es-AR") ?? "—"} / noche
                       </p>
                       <p className="text-sm font-semibold text-foreground">
-                        Total: USD {reserva.precioTotal.toLocaleString("es-AR")}
+                        Total: USD {reserva.precioTotal?.toLocaleString("es-AR") ?? "—"}
                       </p>
                     </div>
                   </div>
@@ -151,16 +182,28 @@ export function ReservaDetailDialog({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-medium text-foreground">Pagos</h3>
-                  {["RESERVADA", "CONFIRMADA", "ADEUDADA"].includes(reserva.estadoReserva) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPagoOpen(true)}
-                    >
-                      <CreditCard className="mr-1 size-3" />
-                      Agregar Pago
-                    </Button>
-                  )}
+                  {["RESERVADA", "CONFIRMADA", "ADEUDADA"].includes(reserva.estadoReserva) &&
+                    (verificandoUsuario ? (
+                      <Button variant="outline" size="sm" disabled>
+                        <Spinner className="mr-1 size-3" />
+                        Verificando...
+                      </Button>
+                    ) : usuarioRegistrado ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPagoOpen(true)}
+                      >
+                        <CreditCard className="mr-1 size-3" />
+                        Agregar Pago
+                      </Button>
+                    ) : (
+                      errorVerificacionUsuario && (
+                        <span className="text-xs text-muted-foreground">
+                          El huésped no está registrado en el sistema
+                        </span>
+                      )
+                    ))}
                 </div>
 
                 {reserva.pagos.length === 0 ? (
@@ -193,14 +236,14 @@ export function ReservaDetailDialog({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Total pagado:</span>
                       <span className="font-medium text-foreground">
-                        USD {totalPagado.toLocaleString("es-AR")}
+                        USD {totalPagado?.toLocaleString("es-AR") ?? "—"}
                       </span>
                     </div>
                     {montoPendiente > 0 && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Pendiente:</span>
                         <span className="font-medium text-yellow-400">
-                          USD {montoPendiente.toLocaleString("es-AR")}
+                          USD {montoPendiente?.toLocaleString("es-AR") ?? "—"}
                         </span>
                       </div>
                     )}
@@ -214,17 +257,30 @@ export function ReservaDetailDialog({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-medium text-foreground">Reviews</h3>
-                  {["EFECTUADA", "FINALIZADA"].includes(reserva.estadoReserva) &&
-                    !reserva.clientReview && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setReviewOpen(true)}
-                      >
-                        <Star className="mr-1 size-3" />
-                        Agregar Review
-                      </Button>
-                    )}
+                  <div className="flex gap-2">
+                    {["EFECTUADA", "ADEUDADA", "FINALIZADA"].includes(reserva.estadoReserva) &&
+                      !reserva.clientReview && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setReviewOpen(true)}
+                        >
+                          <Star className="mr-1 size-3" />
+                          Agregar Review
+                        </Button>
+                      )}
+                    {["EFECTUADA", "ADEUDADA", "FINALIZADA"].includes(reserva.estadoReserva) &&
+                      !reserva.hostReview && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setHostReviewOpen(true)}
+                        >
+                          <Star className="mr-1 size-3" />
+                          Agregar Review del Host
+                        </Button>
+                      )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -277,6 +333,13 @@ export function ReservaDetailDialog({
                   </Button>
                 )}
 
+                {reserva.estadoReserva === "EFECTUADA" && (
+                  <Button onClick={() => setCheckOutConfirmOpen(true)} disabled={checkOut.isPending}>
+                    <LogOut className="mr-1 size-4" />
+                    Check-out
+                  </Button>
+                )}
+
                 {reserva.estadoReserva === "RESERVADA" && (
                   <Button
                     variant="destructive"
@@ -298,11 +361,19 @@ export function ReservaDetailDialog({
         onOpenChange={setPagoOpen}
         reservaId={reserva.id}
         montoPendiente={montoPendiente}
+        dni={reserva.huesped.dni}
       />
 
       <ReviewFormDialog
         open={reviewOpen}
         onOpenChange={setReviewOpen}
+        reservaId={reserva.id}
+      />
+
+      <ReviewFormDialog
+        tipo="host"
+        open={hostReviewOpen}
+        onOpenChange={setHostReviewOpen}
         reservaId={reserva.id}
       />
 
@@ -343,6 +414,27 @@ export function ReservaDetailDialog({
               className="bg-emerald-600 text-white hover:bg-emerald-700"
             >
               {checkIn.isPending ? "Procesando..." : "Confirmar Check-in"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={checkOutConfirmOpen} onOpenChange={setCheckOutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Realizar Check-out</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Confirmás el check-out para esta reserva? El cliente egresará del hotel. Si la review del host está registrada y el pago está completo, la reserva pasará a estado FINALIZADA; de lo contrario, pasará a estado ADEUDADA.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={checkOut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCheckOut}
+              disabled={checkOut.isPending}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {checkOut.isPending ? "Procesando..." : "Confirmar Check-out"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -24,9 +24,9 @@ export const ESTADO_RESERVA_LABELS: Record<EstadoReserva, string> = {
 // --- Reservas ---
 
 export interface HuespedReserva {
-  idUsuario: string;
   nombreApellido: string;
   email: string;
+  dni: string;
 }
 
 export interface TarifaReserva {
@@ -39,6 +39,7 @@ export interface Pago {
   transactionId: string;
   amount: TarifaReserva;
   status: string;
+  nroTarjeta?: string;
 }
 
 export interface Review {
@@ -75,6 +76,7 @@ export interface PagoDTORequest {
   transactionId: string;
   amount: number;
   currency: string;
+  nroTarjeta?: string;
 }
 
 export interface ReviewDTORequest {

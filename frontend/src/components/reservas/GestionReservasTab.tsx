@@ -8,7 +8,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -41,8 +40,8 @@ import { ReservaDetailDialog } from "./ReservaDetailDialog";
 import type { ReservaDTOResponse } from "@/types/reserva";
 
 export function GestionReservasTab() {
-  const [huespedId, setHuespedId] = useState("");
-  const [searchId, setSearchId] = useState("");
+  const [dni, setDni] = useState("");
+  const [searchDni, setSearchDni] = useState("");
   const [page, setPage] = useState(0);
   const [detailTarget, setDetailTarget] = useState<ReservaDTOResponse | null>(null);
   const [cancelTarget, setCancelTarget] = useState<ReservaDTOResponse | null>(null);
@@ -53,7 +52,7 @@ export function GestionReservasTab() {
     [page]
   );
 
-  const { data: result, isLoading } = useReservasPorHuesped(searchId, params);
+  const { data: result, isLoading } = useReservasPorHuesped(searchDni, params);
   const cancelarReserva = useCancelarReserva();
   const checkIn = useCheckIn();
 
@@ -61,7 +60,7 @@ export function GestionReservasTab() {
   const totalPages = result?.totalPages ?? 0;
 
   const handleSearch = () => {
-    setSearchId(huespedId.trim());
+    setSearchDni(dni.trim());
     setPage(0);
   };
 
@@ -88,23 +87,23 @@ export function GestionReservasTab() {
       {/* Barra de búsqueda */}
       <div className="flex items-center gap-2">
         <Input
-          placeholder="ID del huésped..."
-          value={huespedId}
-          onChange={(e) => setHuespedId(e.target.value)}
+          placeholder="DNI del huésped..."
+          value={dni}
+          onChange={(e) => setDni(e.target.value)}
           onKeyDown={handleKeyDown}
           className="max-w-xs"
         />
-        <Button onClick={handleSearch} disabled={!huespedId.trim()}>
+        <Button onClick={handleSearch} disabled={!dni.trim()}>
           Buscar
         </Button>
       </div>
 
       {/* Resultados */}
-      {!searchId ? (
+      {!searchDni ? (
         <div className="py-16 text-center">
           <CalendarCheck className="mx-auto mb-3 size-12 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
-            Ingresá el ID de un huésped para ver sus reservas
+            Ingresá el DNI de un huésped para ver sus reservas
           </p>
         </div>
       ) : isLoading ? (
@@ -115,7 +114,7 @@ export function GestionReservasTab() {
         <div className="py-12 text-center">
           <CalendarCheck className="mx-auto mb-3 size-10 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
-            No se encontraron reservas para el huésped "{searchId}"
+            No se encontraron reservas para el DNI "{searchDni}"
           </p>
         </div>
       ) : (
@@ -124,7 +123,6 @@ export function GestionReservasTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
                   <TableHead>Hotel</TableHead>
                   <TableHead>Habitación</TableHead>
                   <TableHead>Check-in</TableHead>
@@ -137,11 +135,6 @@ export function GestionReservasTab() {
               <TableBody>
                 {reservas.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-mono text-xs">
-                        {r.id.slice(0, 8)}...
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       Hotel #{r.hotelId}
                     </TableCell>
@@ -158,7 +151,7 @@ export function GestionReservasTab() {
                       <EstadoBadge estado={r.estadoReserva} />
                     </TableCell>
                     <TableCell className="font-medium">
-                      USD {r.precioTotal.toLocaleString("es-AR")}
+                      USD {r.precioTotal?.toLocaleString("es-AR") ?? "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

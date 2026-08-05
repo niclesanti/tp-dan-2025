@@ -241,7 +241,7 @@ export function BuscarHabitacionesTab() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      USD {hab.precioNoche.toLocaleString("es-AR")}
+                      USD {hab.precioNoche?.toLocaleString("es-AR") ?? "—"}
                     </TableCell>
                     <TableCell>
                       <Button

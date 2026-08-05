@@ -11,6 +11,7 @@ import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioDTOUpdate;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTORequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoDTOResponse;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaPrincipalDTO;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioDTOResponse;
 
 public interface UserService {
@@ -35,4 +36,5 @@ public interface UserService {
     void eliminarTarjeta(Integer huespedId, Integer tarjetaId);
     TarjetaCreditoDTOResponse cambiarTarjetaPrincipal(Integer huespedId, Integer tarjetaId);
     Page<TarjetaCreditoDTOResponse> listarTarjetas(Integer huespedId, Pageable pageable);
+    TarjetaPrincipalDTO obtenerTarjetaPrincipalPorDni(String dni);
 }

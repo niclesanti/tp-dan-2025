@@ -60,7 +60,6 @@ export function PropietariosTab() {
                 <TableHead>Email</TableHead>
                 <TableHead>DNI</TableHead>
                 <TableHead>Teléfono</TableHead>
-                <TableHead>Banco</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -72,9 +71,6 @@ export function PropietariosTab() {
                     <Badge variant="secondary">{p.dni}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{p.telefono}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {p.cuentaBancaria?.nombreBanco ?? "—"}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

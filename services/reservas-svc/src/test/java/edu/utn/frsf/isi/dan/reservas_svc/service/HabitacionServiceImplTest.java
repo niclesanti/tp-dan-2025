@@ -13,11 +13,13 @@ import edu.utn.frsf.isi.dan.shared.TarifaDTO;
 import edu.utn.frsf.isi.dan.shared.TipoEvento;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.time.Instant;
 import java.util.List;
@@ -115,6 +117,23 @@ class HabitacionServiceImplTest {
         when(habitacionRepository.save(any(Habitacion.class))).thenAnswer(i -> i.getArgument(0));
         habitacionService.handleEvent(event);
         verify(habitacionRepository).save(any(Habitacion.class));
+    }
+
+    @Test
+    void buscarDisponiblesShouldMatchBothObjectIdAndIntegerHabitacionId() {
+        var hab = TestDataFactory.habitacion();
+        when(mongoTemplate.find(any(), eq(Habitacion.class))).thenReturn(List.of(hab));
+        when(mongoTemplate.exists(any(), eq(Reserva.class))).thenReturn(false);
+
+        habitacionService.buscarDisponibles(
+                Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800),
+                null, null, null, null, null, null, null, null, PageRequest.of(0, 10));
+
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).exists(queryCaptor.capture(), eq(Reserva.class));
+        var idHabitacion = (org.bson.Document) queryCaptor.getValue().getQueryObject().get("idHabitacion");
+        var valores = (List<String>) idHabitacion.get("$in");
+        assertThat(valores).containsExactlyInAnyOrder("hab-1", "101");
     }
 
     @Test

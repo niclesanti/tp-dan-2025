@@ -29,15 +29,18 @@ cd services/user-svc && ./mvnw test
 # Makefile shortcut (runs user-svc tests only)
 make test
 
+# Frontend verification (no test runner; typecheck + build)
+cd frontend && npx tsc --noEmit && npm run build
+
 # Local dev from IDE (outside Docker)
 ./mvnw spring-boot:run -DskipTests -Dspring-boot.run.profiles=local
 ```
 
 ## Architecture
 
-- **user-svc** (`:8081`): Users (huésped/propietario), credit cards, banks — CRUD via REST
+- **user-svc** (`:8081`): Users (huésped/propietario), credit cards, banks — CRUD via REST. Exposes `GET /users/dni/{dni}` (exact DNI lookup) and `GET /users/huesped/tarjeta-principal?dni={dni}` → `TarjetaPrincipalDTO {"numero":"..."}` (primary credit card number of a huésped; 404 if user not found / not a huésped / no primary card)
 - **gestion-svc** (`:8083`): Hotels, rooms, rates — publishes events to RabbitMQ exchange `dan.exchange` with routing key `dan.habitacion.#`
-- **reservas-svc** (`:8082`): Room search, reservation lifecycle, payments — consumes RabbitMQ events (`spring.amqp.deserialization.trust.all=true`)
+- **reservas-svc** (`:8082`): Room search, reservation lifecycle, payments — consumes RabbitMQ events (`spring.amqp.deserialization.trust.all=true`). The embedded `Huesped` document in MongoDB holds `dni`, `nombreApellido`, `email`; reservations are created/updated with a `HuespedDTORequest` (mapped via `HuespedMapper`) and searched **by DNI** via `GET /reservas/huesped/dni/{dni}`
 - **dan-spring-gateway** (`:8080`): API Gateway, routes requests to services via `lb://service-name` when Eureka is active
 - **dan-eureka-server** (`:8761`): Service discovery — start before other services
 - **dan-common-lib**: DTOs (`HotelDTO`, `HabitacionDTO`, `TarifaDTO`) and events (`HabitacionEvent`, `HotelCierreEvent`) — must be compiled first for dependent services
@@ -45,7 +48,9 @@ make test
 
 ## Frontend architecture
 
-React SPA under `frontend/src/`. Stack: React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui (base-vega, built on `@base-ui/react`), TanStack Query v5, React Hook Form + Zod, Axios, Lucide icons, sonner toasts.
+React SPA under `frontend/src/`. Stack: React 19, TypeScript 6, Vite 8, Tailwind CSS 4, shadcn/ui (base-vega, built on `@base-ui/react`), TanStack Query v5, React Hook Form + Zod, Axios 1.x, react-router-dom v7, Lucide icons, sonner toasts.
+
+> Note: `tsconfig.json` no longer defines `baseUrl` (deprecated/removed in TypeScript 6); `paths` (`@/*` → `./src/*`) resolve relative to the config file. `npx tsc --noEmit` and `npm run build` are the frontend verification commands (no unit-test runner is configured).
 
 ### Directory structure
 
@@ -99,12 +104,14 @@ Routes defined in `AppRouter.tsx`. All routes except `/login` render inside `<Ap
 - **Delete confirmation**: Reusable `DeleteConfirmDialog` component (AlertDialog) used across all CRUD sections.
 - **API calls**: All via gateway. Service files are plain objects with methods calling `api.get/post/put/delete/patch`. Response interceptor normalizes backend validation errors into readable messages.
 - **Routing**: Routes defined in `AppRouter.tsx` inside `<AppLayout />`. Sidebar entries in `Sidebar.tsx`.
+- **Reservation guest flow**: `CrearReservaDialog` collects `nombreApellido`, `email`, `dni` (validated `^\d{7,8}$`) and sends them as the nested `huesped` in `ReservaDTORequest`. `GestionReservasTab` searches reservations by **DNI** (`useReservasPorHuesped(dni)` → `GET /reservas/reservas/huesped/dni/{dni}`).
+- **Payment restrictions**: `ReservaDetailDialog` shows "Agregar Pago" only when the guest's DNI exists in user-svc (query via `usuarioService.buscarPorDniExacto`) AND the estado is `RESERVADA`/`CONFIRMADA`/`ADEUDADA`. `PagoFormDialog` allows only `TARJETA_CREDITO`/`EFECTIVO`, currency fixed to `USD` (read-only), and when `TARJETA_CREDITO` is selected it auto-fetches the guest's primary card via `usuarioService.obtenerTarjetaPrincipalPorDni(dni)` (reactive `useQuery` with `enabled: open && !!dni && method === "TARJETA_CREDITO"`) and sends it as `nroTarjeta`; EFECTIVO omits the card.
 
 ### Types
 
-- `types/usuario.ts`: `Usuario`, `Huesped`, `Propietario`, `TarjetaCredito`, `CuentaBancaria`, `Banco`, `PageResponse<T>`, plus `*CreateRequest` / `*UpdateRequest` types
+- `types/usuario.ts`: `Usuario`, `Huesped`, `Propietario`, `TarjetaCredito`, `CuentaBancaria`, `Banco`, `TarjetaPrincipalDTO`, `PageResponse<T>`, plus `*CreateRequest` / `*UpdateRequest` types
 - `types/hotel.ts`: `Hotel`, `Habitacion`, `TipoHabitacion`, `Tarifa`, `Amenity` (union of 18 values), `AMENITY_LABELS`, `PageResponse<T>`, plus request types
-- `types/reserva.ts`: `ReservaDTOResponse`, `ReservaDTORequest`, `EstadoReserva` (8 states), `ESTADO_RESERVA_LABELS`, `HabitacionDisponibleDTO`, `Pago`, `Review`, `PageResponse<T>`
+- `types/reserva.ts`: `ReservaDTOResponse`, `ReservaDTORequest`, `HuespedReserva` (`dni`, `nombreApellido`, `email`), `EstadoReserva` (8 states), `ESTADO_RESERVA_LABELS`, `HabitacionDisponibleDTO`, `Pago`/`PagoDTORequest` (with optional `nroTarjeta`), `Review`, `PageResponse<T>`
 
 ### Adding a new section
 
@@ -125,6 +132,11 @@ Routes defined in `AppRouter.tsx`. All routes except `/login` render inside `<Ap
 - **`.env` values used by docker compose** — MYSQL_*, POSTGRES_*, RABBITMQ_*, MONGO_* env vars defined there
 - **All services expose8080 internally** — Docker maps to host ports via `docker-compose.override.yml`
 - **Default profile is `dev,eureka`** — services register with Eureka; gateway routes via `lb://`
+- **`ResponseEntity<String>` bodies are sent as raw `text/plain`** — a bare numeric body like `9874567890987456` is valid JSON and axios parses it as a **JS number** (precision loss for cards > 2^53, and `.slice()` crashes). NEVER return a domain string as `ResponseEntity<String>`; wrap it in a small DTO (e.g. `TarjetaPrincipalDTO { numero }`) so it's proper `application/json`.
+- **Dialog-scoped `useQuery` must gate on `open`** — include `open` in `enabled` so queries don't fire while the dialog is closed (e.g. `PagoFormDialog`'s card lookup would run when only the parent `ReservaDetailDialog` was open, crashing it once data arrived).
+- **Call all React hooks before early returns** — in components with `if (!x) return null;`, place `useQuery`/`useForm`/`useState` above the early return (Rules of Hooks).
+- **Lombok + incremental builds**: after editing Lombok-annotated models, run `./mvnw clean test` (a plain `test` may hit `NoSuchMethodError` from stale `target/classes`).
+- **otel-collector**: `infra/otel/otel-collector-config.yaml` must not use a `format` key on the Loki exporter (removed; OTel Collector v0.102+ rejects it and the container restart-loops).
 
 ## Testing
 
