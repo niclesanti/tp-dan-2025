@@ -23,7 +23,7 @@ export type CrearReservaFormValues = z.infer<typeof crearReservaSchema>;
 
 export const pagoSchema = z.object({
   method: z.string().min(1, "Método de pago requerido"),
-  transactionId: z.string().min(1, "ID de transacción requerido"),
+  transactionId: z.string().optional(),
   amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
   currency: z.literal("USD"),
   nroTarjeta: z.string().optional(),

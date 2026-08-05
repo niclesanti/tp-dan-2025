@@ -83,7 +83,7 @@ export function PagoFormDialog({
   const handleSubmit = form.handleSubmit((data) => {
     const payload: PagoDTORequest = {
       method: data.method,
-      transactionId: data.transactionId,
+      transactionId: data.transactionId || "",
       amount: data.amount,
       currency: "USD",
       nroTarjeta:
@@ -162,10 +162,10 @@ export function PagoFormDialog({
                 )}
 
                 <Field>
-                  <FieldLabel>ID de transacción *</FieldLabel>
+                  <FieldLabel>ID de transacción</FieldLabel>
                   <Input
                     {...form.register("transactionId")}
-                    placeholder="TXN-12345"
+                    placeholder="TXN-12345 (opcional)"
                   />
                   <FieldError errors={[form.formState.errors.transactionId]} />
                 </Field>

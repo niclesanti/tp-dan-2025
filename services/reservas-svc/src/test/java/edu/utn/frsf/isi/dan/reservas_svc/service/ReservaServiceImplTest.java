@@ -241,6 +241,23 @@ class ReservaServiceImplTest {
         assertThat(reserva.getEstadoReserva()).isEqualTo(EstadoReserva.CONFIRMADA);
         assertThat(reserva.getPagos()).hasSize(1);
         assertThat(reserva.getPagos().get(0).getNroTarjeta()).isEqualTo("1234567812345678");
+        assertThat(reserva.getPagos().get(0).getTransactionId()).isEqualTo("tx-1");
+    }
+
+    @Test
+    void agregarPagoShouldGenerateTransactionIdWhenNotProvided() {
+        var reserva = TestDataFactory.reserva();
+        reserva.setEstadoReserva(EstadoReserva.RESERVADA);
+        when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+        when(reservaMapper.toResponse(any())).thenReturn(TestDataFactory.reservaDTOResponse());
+
+        reservaService.agregarPago("r1", TestDataFactory.pagoDTORequestSinTransactionId());
+
+        assertThat(reserva.getPagos()).hasSize(1);
+        assertThat(reserva.getPagos().get(0).getTransactionId())
+                .isNotBlank()
+                .startsWith("PAY-");
     }
 
     @Test

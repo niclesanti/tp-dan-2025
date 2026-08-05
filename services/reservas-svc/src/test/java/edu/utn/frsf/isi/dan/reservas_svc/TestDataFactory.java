@@ -76,6 +76,10 @@ public final class TestDataFactory {
         return new PagoDTORequest("CARD", "tx-1", 50.0, "ARS", "1234567812345678");
     }
 
+    public static PagoDTORequest pagoDTORequestSinTransactionId() {
+        return new PagoDTORequest("CARD", null, 50.0, "ARS", "1234567812345678");
+    }
+
     public static ReviewDTORequest reviewDTORequest() {
         return new ReviewDTORequest(5.0, "Excelente");
     }

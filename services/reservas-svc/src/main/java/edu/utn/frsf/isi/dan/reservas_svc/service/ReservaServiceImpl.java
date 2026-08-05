@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -167,9 +168,16 @@ public class ReservaServiceImpl implements ReservaService {
             throw new IllegalStateException("No se puede agregar un pago a una reserva cancelada");
         }
         
+        // Si no se provee un ID de transacción, generar uno automáticamente
+        String transactionId = pagoRequest.transactionId();
+        if (transactionId == null || transactionId.isBlank()) {
+            transactionId = "PAY-" + UUID.randomUUID();
+            log.info("TransactionId no provisto, generado automáticamente: {}", transactionId);
+        }
+        
         var pago = Pago.builder()
                 .method(pagoRequest.method())
-                .transactionId(pagoRequest.transactionId())
+                .transactionId(transactionId)
                 .amount(Tarifa.builder()
                         .precio(pagoRequest.amount())
                         .moneda(pagoRequest.currency())
