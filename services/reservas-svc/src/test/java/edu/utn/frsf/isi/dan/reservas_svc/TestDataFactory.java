@@ -117,7 +117,15 @@ public final class TestDataFactory {
                 .capacidad(2)
                 .precioNoche(100.0)
                 .tipoHabitacion("Suite")
-                .hotel(HotelSimpleDTO.builder().id(1).nombre("Hotel Dan").categoria(4).domicilio("San Martin 123").build())
+                .amenities(List.of("WIFI"))
+                .hotel(HotelSimpleDTO.builder()
+                        .id(1)
+                        .nombre("Hotel Dan")
+                        .categoria(4)
+                        .domicilio("San Martin 123")
+                        .latitud(-32.95)
+                        .longitud(-60.66)
+                        .build())
                 .build();
     }
 }

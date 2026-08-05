@@ -17,6 +17,10 @@ export function useBuscarHabitacionesDisponibles(
     precioMin?: number;
     precioMax?: number;
     categoriaHotel?: number;
+    amenities?: string[];
+    latitud?: number;
+    longitud?: number;
+    radioKm?: number;
     page?: number;
     size?: number;
   },

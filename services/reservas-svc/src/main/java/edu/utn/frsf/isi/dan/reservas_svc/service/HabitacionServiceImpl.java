@@ -15,9 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Metrics;
-import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -127,12 +124,13 @@ public class HabitacionServiceImpl implements HabitacionService {
         
         // Filtro geoespacial (búsqueda por proximidad)
         if (latitud != null && longitud != null && radioKm != null) {
-            // MongoDB GeoJSON usa [longitude, latitude] (x, y)
-            Point point = new Point(longitud, latitud);
-            Distance distance = new Distance(radioKm, Metrics.KILOMETERS);
-            
-            // Usar near con Point y Distance
-            criteriaList.add(Criteria.where("hotel.ubicacion").near(point).maxDistance(distance.getValue()));
+            // MongoDB GeoJSON usa [longitude, latitude] (x, y).
+            // nearSphere es compatible con el índice 2dsphere y, con coordenadas GeoJSON,
+            // $maxDistance se expresa en metros (a diferencia de near, que usa radianes).
+            GeoJsonPoint geoPoint = new GeoJsonPoint(longitud, latitud);
+            double maxDistanceMeters = radioKm * 1000.0;
+
+            criteriaList.add(Criteria.where("hotel.ubicacion").nearSphere(geoPoint).maxDistance(maxDistanceMeters));
         }
         
         if (!criteriaList.isEmpty()) {
@@ -149,6 +147,9 @@ public class HabitacionServiceImpl implements HabitacionService {
         
         // Aplicar paginación
         int start = (int) pageable.getOffset();
+        if (start >= disponibles.size()) {
+            return new PageImpl<>(List.of(), pageable, disponibles.size());
+        }
         int end = Math.min((start + pageable.getPageSize()), disponibles.size());
         List<Habitacion> paginadas = disponibles.subList(start, end);
         
@@ -252,11 +253,15 @@ public class HabitacionServiceImpl implements HabitacionService {
     }
     
     private HabitacionDisponibleDTO toDisponibleDTO(Habitacion habitacion) {
+        var hotel = habitacion.getHotel();
+        var ubicacion = hotel != null ? hotel.getUbicacion() : null;
         var hotelDTO = HotelSimpleDTO.builder()
-                .id(habitacion.getHotel().getId())
-                .nombre(habitacion.getHotel().getNombre())
-                .categoria(habitacion.getHotel().getCategoria())
-                .domicilio(habitacion.getHotel().getDomicilio())
+                .id(hotel != null ? hotel.getId() : null)
+                .nombre(hotel != null ? hotel.getNombre() : null)
+                .categoria(hotel != null ? hotel.getCategoria() : null)
+                .domicilio(hotel != null ? hotel.getDomicilio() : null)
+                .latitud(ubicacion != null ? ubicacion.getY() : null)
+                .longitud(ubicacion != null ? ubicacion.getX() : null)
                 .build();
         
         return HabitacionDisponibleDTO.builder()
@@ -265,6 +270,7 @@ public class HabitacionServiceImpl implements HabitacionService {
                 .capacidad(habitacion.getCapacidad())
                 .precioNoche(habitacion.getPrecioNoche() != null ? habitacion.getPrecioNoche() : 0.0)
                 .tipoHabitacion(habitacion.getTipoHabitacion())
+                .amenities(habitacion.getAmenities())
                 .hotel(hotelDTO)
                 .build();
     }

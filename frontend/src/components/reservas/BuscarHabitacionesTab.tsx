@@ -29,6 +29,8 @@ import {
 import { BedDouble, Star, MapPin } from "lucide-react";
 import { useBuscarHabitacionesDisponibles } from "@/hooks/useReservas";
 import { CrearReservaDialog } from "./CrearReservaDialog";
+import { AmenityFilter } from "./AmenityFilter";
+import type { Amenity } from "@/types/hotel";
 import type { HabitacionDisponibleDTO } from "@/types/reserva";
 
 export function BuscarHabitacionesTab() {
@@ -38,6 +40,12 @@ export function BuscarHabitacionesTab() {
   const [precioMinFilter, setPrecioMinFilter] = useState("");
   const [precioMaxFilter, setPrecioMaxFilter] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState<string>("");
+  const [selectedAmenities, setSelectedAmenities] = useState<Set<Amenity>>(
+    new Set()
+  );
+  const [latitudFilter, setLatitudFilter] = useState("");
+  const [longitudFilter, setLongitudFilter] = useState("");
+  const [radioKmFilter, setRadioKmFilter] = useState("");
   const [page, setPage] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
   const [reservarTarget, setReservarTarget] = useState<HabitacionDisponibleDTO | null>(null);
@@ -52,6 +60,17 @@ export function BuscarHabitacionesTab() {
       return `${dateStr}T00:00:00.000Z`;
     };
 
+    const lat = latitudFilter ? Number(latitudFilter) : undefined;
+    const lon = longitudFilter ? Number(longitudFilter) : undefined;
+    const radio = radioKmFilter ? Number(radioKmFilter) : undefined;
+    const hasGeoFilter =
+      lat !== undefined &&
+      lon !== undefined &&
+      radio !== undefined &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lon) &&
+      !Number.isNaN(radio);
+
     return {
       checkIn: formatToISODateTime(checkIn),
       checkOut: formatToISODateTime(checkOut),
@@ -61,8 +80,12 @@ export function BuscarHabitacionesTab() {
       ...(precioMinFilter ? { precioMin: Number(precioMinFilter) } : {}),
       ...(precioMaxFilter ? { precioMax: Number(precioMaxFilter) } : {}),
       ...(categoriaFilter ? { categoriaHotel: Number(categoriaFilter) } : {}),
+      ...(selectedAmenities.size > 0
+        ? { amenities: Array.from(selectedAmenities) }
+        : {}),
+      ...(hasGeoFilter ? { latitud: lat, longitud: lon, radioKm: radio } : {}),
     };
-  }, [checkIn, checkOut, page, capacidadFilter, precioMinFilter, precioMaxFilter, categoriaFilter]);
+  }, [checkIn, checkOut, page, capacidadFilter, precioMinFilter, precioMaxFilter, categoriaFilter, selectedAmenities, latitudFilter, longitudFilter, radioKmFilter]);
 
   const searchEnabled = hasSearched && !!checkIn && !!checkOut && checkIn < checkOut;
   const { data: result, isLoading } = useBuscarHabitacionesDisponibles(params, searchEnabled);
@@ -167,15 +190,71 @@ export function BuscarHabitacionesTab() {
               onChange={(e) => setPrecioMaxFilter(e.target.value)}
             />
           </div>
-          <div className="flex items-end">
-            <Button
-              onClick={handleSearch}
-              disabled={!canSearch}
-              className="w-full"
-            >
-              Buscar Habitaciones
-            </Button>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Aménities
+            </label>
+            <div className="rounded-md border border-border p-2">
+              <AmenityFilter
+                selected={selectedAmenities}
+                onChange={setSelectedAmenities}
+              />
+            </div>
           </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Latitud (punto de referencia)
+            </label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="-34.6037"
+              min={-90}
+              max={90}
+              value={latitudFilter}
+              onChange={(e) => setLatitudFilter(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Longitud (punto de referencia)
+            </label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="-58.3816"
+              min={-180}
+              max={180}
+              value={longitudFilter}
+              onChange={(e) => setLongitudFilter(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Radio (km)
+            </label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="Ej: 5"
+              min={0.1}
+              value={radioKmFilter}
+              onChange={(e) => setRadioKmFilter(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <Button
+            onClick={handleSearch}
+            disabled={!canSearch}
+            className="w-full"
+          >
+            Buscar Habitaciones
+          </Button>
         </div>
       </div>
 

@@ -161,6 +161,71 @@ class HabitacionServiceImplTest {
     }
 
     @Test
+    void buscarDisponiblesShouldApplyAmenitiesCriteria() {
+        var hab = TestDataFactory.habitacion();
+        when(mongoTemplate.find(any(), eq(Habitacion.class))).thenReturn(List.of(hab));
+        when(mongoTemplate.exists(any(), eq(Reserva.class))).thenReturn(false);
+
+        habitacionService.buscarDisponibles(
+                Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800),
+                null, null, null, null, List.of("WIFI", "PILETA"), null, null, null, PageRequest.of(0, 10));
+
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).find(queryCaptor.capture(), eq(Habitacion.class));
+        var amenitiesDoc = (org.bson.Document) findInCriteria(queryCaptor.getValue(), "amenities");
+        assertThat(amenitiesDoc).isNotNull();
+        assertThat(amenitiesDoc.get("$all")).isEqualTo(List.of("WIFI", "PILETA"));
+    }
+
+    @Test
+    void buscarDisponiblesShouldApplyNearSphereGeoCriteria() {
+        var hab = TestDataFactory.habitacion();
+        when(mongoTemplate.find(any(), eq(Habitacion.class))).thenReturn(List.of(hab));
+        when(mongoTemplate.exists(any(), eq(Reserva.class))).thenReturn(false);
+
+        habitacionService.buscarDisponibles(
+                Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800),
+                null, null, null, null, null, -32.95, -60.66, 3.0, PageRequest.of(0, 10));
+
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).find(queryCaptor.capture(), eq(Habitacion.class));
+        var geoDoc = (org.bson.Document) findInCriteria(queryCaptor.getValue(), "hotel.ubicacion");
+        assertThat(geoDoc).isNotNull();
+        var nearSphereDoc = (org.bson.Document) geoDoc.get("$nearSphere");
+        assertThat(nearSphereDoc).isNotNull();
+        assertThat(nearSphereDoc.get("$maxDistance")).isEqualTo(3.0 * 1000.0);
+    }
+
+    @Test
+    void toDisponibleDTOShouldExposeAmenitiesAndCoordinates() {
+        var hab = TestDataFactory.habitacion();
+        when(mongoTemplate.find(any(), eq(Habitacion.class))).thenReturn(List.of(hab));
+        when(mongoTemplate.exists(any(), eq(Reserva.class))).thenReturn(false);
+
+        var page = habitacionService.buscarDisponibles(
+                Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800),
+                null, null, null, null, null, null, null, null, PageRequest.of(0, 10));
+
+        var dto = page.getContent().get(0);
+        assertThat(dto.getAmenities()).containsExactly("WIFI");
+        assertThat(dto.getHotel().getLatitud()).isEqualTo(-32.95);
+        assertThat(dto.getHotel().getLongitud()).isEqualTo(-60.66);
+    }
+
+    @Test
+    void buscarDisponiblesShouldReturnEmptyPageWhenOffsetBeyondResults() {
+        var hab = TestDataFactory.habitacion();
+        when(mongoTemplate.find(any(), eq(Habitacion.class))).thenReturn(List.of(hab));
+        when(mongoTemplate.exists(any(), eq(Reserva.class))).thenReturn(false);
+
+        var page = habitacionService.buscarDisponibles(
+                Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800),
+                null, null, null, null, null, null, null, null, PageRequest.of(5, 10));
+        assertThat(page.getContent()).isEmpty();
+        assertThat(page.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
     void buscarDisponiblesShouldWorkWithoutAnyOptionalFilter() {
         var hab = TestDataFactory.habitacion();
         when(mongoTemplate.find(any(), eq(Habitacion.class))).thenReturn(List.of(hab));
@@ -224,6 +289,21 @@ class HabitacionServiceImplTest {
         assertThat(habitacionService.save(hab)).isEqualTo(hab);
         habitacionService.deleteById("hab-1");
         verify(habitacionRepository).deleteById("hab-1");
+    }
+
+    private static Object findInCriteria(Query query, String field) {
+        var queryObject = query.getQueryObject();
+        if (queryObject.containsKey(field)) {
+            return queryObject.get(field);
+        }
+        if (queryObject.get("$and") instanceof List<?> andClauses) {
+            for (Object clause : andClauses) {
+                if (clause instanceof org.bson.Document doc && doc.containsKey(field)) {
+                    return doc.get(field);
+                }
+            }
+        }
+        return null;
     }
 
 }

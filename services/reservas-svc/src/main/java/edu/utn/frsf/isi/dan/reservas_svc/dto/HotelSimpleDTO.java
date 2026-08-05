@@ -14,4 +14,6 @@ public class HotelSimpleDTO {
     private String nombre;
     private Integer categoria;
     private String domicilio;
+    private Double latitud;
+    private Double longitud;
 }
