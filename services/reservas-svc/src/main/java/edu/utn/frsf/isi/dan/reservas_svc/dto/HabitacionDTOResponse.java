@@ -2,13 +2,15 @@ package edu.utn.frsf.isi.dan.reservas_svc.dto;
 
 import java.util.List;
 
-public record HabitacionDisponibleDTO(
+public record HabitacionDTOResponse(
         String id,
         Integer habitacionId,
         Integer capacidad,
         Double precioNoche,
-        String tipoHabitacion,
         List<String> amenities,
-        HotelSimpleDTO hotel
+        List<ReservaSimpleDTOResponse> reservas,
+        HotelDTOResponse hotel,
+        Integer idTipoHabitacion,
+        String tipoHabitacion
 ) {
 }

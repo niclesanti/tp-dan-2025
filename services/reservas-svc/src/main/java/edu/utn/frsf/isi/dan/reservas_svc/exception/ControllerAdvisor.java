@@ -7,9 +7,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -61,17 +63,42 @@ public class ControllerAdvisor {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex) {
+        var mensajes = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList();
+        return buildValidationErrorResponse(mensajes);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex) {
+        var mensajes = ex.getAllErrors().stream()
+                .map(org.springframework.context.MessageSourceResolvable::getDefaultMessage)
+                .toList();
+        return buildValidationErrorResponse(mensajes);
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex, WebRequest request) {
+        log.error("Cuerpo de solicitud ilegible: {}", ex.getMessage());
+        var error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                "El cuerpo de la solicitud es inválido o no tiene el formato esperado",
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    private ResponseEntity<Map<String, Object>> buildValidationErrorResponse(List<String> mensajes) {
         Map<String, Object> errors = new HashMap<>();
         errors.put("timestamp", LocalDateTime.now());
         errors.put("status", HttpStatus.BAD_REQUEST.value());
-        
-        Map<String, String> fieldErrors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                fieldErrors.put(error.getField(), error.getDefaultMessage())
-        );
-        errors.put("errors", fieldErrors);
-        
-        log.error("Error de validación: {}", fieldErrors);
+        errors.put("errors", mensajes);
+
+        log.error("Error de validación: {}", mensajes);
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 

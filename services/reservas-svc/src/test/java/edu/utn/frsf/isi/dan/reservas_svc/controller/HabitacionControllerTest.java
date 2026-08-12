@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.reservas_svc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.utn.frsf.isi.dan.reservas_svc.TestDataFactory;
+import edu.utn.frsf.isi.dan.reservas_svc.exception.EntityNotFoundException;
 import edu.utn.frsf.isi.dan.reservas_svc.service.HabitacionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -32,15 +32,23 @@ class HabitacionControllerTest {
 
     @Test
     void getAllShouldReturn200() throws Exception {
-        when(habitacionService.findAll()).thenReturn(List.of(TestDataFactory.habitacion()));
+        when(habitacionService.findAll()).thenReturn(List.of(TestDataFactory.habitacionDTOResponse()));
         mockMvc.perform(get("/habitaciones"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value("hab-1"));
     }
 
     @Test
+    void getByIdShouldReturn200() throws Exception {
+        when(habitacionService.buscarPorId("hab-1")).thenReturn(TestDataFactory.habitacionDTOResponse());
+        mockMvc.perform(get("/habitaciones/hab-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("hab-1"));
+    }
+
+    @Test
     void getByIdShouldReturn404WhenMissing() throws Exception {
-        when(habitacionService.findById("x")).thenReturn(Optional.empty());
+        when(habitacionService.buscarPorId("x")).thenThrow(new EntityNotFoundException("x"));
         mockMvc.perform(get("/habitaciones/x")).andExpect(status().isNotFound());
     }
 

@@ -1,11 +1,12 @@
 package edu.utn.frsf.isi.dan.reservas_svc.dto;
 
-public record HotelSimpleDTO(
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
+
+public record HotelDTOResponse(
         Integer id,
         String nombre,
         Integer categoria,
         String domicilio,
-        Double latitud,
-        Double longitud
+        GeoJsonPoint ubicacion
 ) {
 }

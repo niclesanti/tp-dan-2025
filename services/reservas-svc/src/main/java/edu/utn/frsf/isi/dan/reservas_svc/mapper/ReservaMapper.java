@@ -2,11 +2,12 @@ package edu.utn.frsf.isi.dan.reservas_svc.mapper;
 
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTOResponse;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = HuespedMapper.class)
+@Mapper(config = MapstructConfig.class, uses = {HuespedMapper.class, PagoMapper.class, ReviewMapper.class})
 public interface ReservaMapper {
 
     @Mapping(source = "_id", target = "id")

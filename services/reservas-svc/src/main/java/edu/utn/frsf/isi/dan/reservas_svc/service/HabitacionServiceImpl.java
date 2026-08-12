@@ -1,15 +1,14 @@
 package edu.utn.frsf.isi.dan.reservas_svc.service;
 
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDisponibleDTO;
-import edu.utn.frsf.isi.dan.reservas_svc.dto.HotelSimpleDTO;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDTOResponse;
+import edu.utn.frsf.isi.dan.reservas_svc.exception.EntityNotFoundException;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.HabitacionMapper;
 import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
-import edu.utn.frsf.isi.dan.reservas_svc.model.Hotel;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.HabitacionRepository;
-import edu.utn.frsf.isi.dan.shared.HabitacionDTO;
 import edu.utn.frsf.isi.dan.shared.HabitacionEvent;
-import edu.utn.frsf.isi.dan.shared.HotelDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,35 +34,40 @@ public class HabitacionServiceImpl implements HabitacionService {
 
     private final HabitacionRepository habitacionRepository;
     private final MongoTemplate mongoTemplate;
+    private final HabitacionMapper habitacionMapper;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public List<Habitacion> findAll() {
-        return habitacionRepository.findAll();
+    public List<HabitacionDTOResponse> findAll() {
+        log.info("Listando todas las habitaciones sincronizadas");
+        return habitacionRepository.findAll().stream()
+                .map(habitacionMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Optional<Habitacion> findById(String id) {
-        return habitacionRepository.findById(id);
+    public HabitacionDTOResponse buscarPorId(String id) {
+        log.info("Buscando habitación con ID: {}", id);
+        return habitacionMapper.toResponse(buscarHabitacionOExcepcion(id));
     }
 
-    @Override
-    public Habitacion save(Habitacion habitacion) {
-        return habitacionRepository.save(habitacion);
-    }
-
-    @Override
-    public void deleteById(String id) {
-        habitacionRepository.deleteById(id);
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void handleEvent(HabitacionEvent event) {
         switch (event.getTipoEvento()) {
             case CREAR:
-                save(mapFromHabitacion(event.getHabitacion()));
+                habitacionRepository.save(habitacionMapper.toEntity(event.getHabitacion()));
                 break;
             case ACTUALIZAR_DATOS:
-                updateByHabitacionId(event.getHabitacion().getHabitacionId(),mapFromHabitacion(event.getHabitacion()));
+                updateByHabitacionId(event.getHabitacion().getHabitacionId(),
+                        habitacionMapper.toEntity(event.getHabitacion()));
                 break;
             case ACTUALIZAR_PRECIO:
                 actualizarPrecioPorTipo(event.getTarifa());
@@ -77,122 +80,83 @@ public class HabitacionServiceImpl implements HabitacionService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Page<HabitacionDisponibleDTO> buscarDisponibles(
-            Instant checkIn, Instant checkOut, 
+            Instant checkIn, Instant checkOut,
             Integer capacidad, Double precioMin, Double precioMax,
             Integer categoriaHotel, List<String> amenities,
             Double latitud, Double longitud, Double radioKm,
             Pageable pageable) {
-        
+
         log.info("Buscando habitaciones disponibles del {} al {}", checkIn, checkOut);
-        if (categoriaHotel != null) {
-            log.info("  - Filtro categoría hotel: {} estrellas", categoriaHotel);
-        }
-        if (amenities != null && !amenities.isEmpty()) {
-            log.info("  - Filtro amenities: {}", amenities);
-        }
-        if (latitud != null && longitud != null && radioKm != null) {
-            log.info("  - Filtro geoespacial: lat={}, lon={}, radio={}km", latitud, longitud, radioKm);
-        }
-        
-        // Construir query para habitaciones según filtros
+
         Query habitacionQuery = new Query();
         List<Criteria> criteriaList = new ArrayList<>();
-        
+
         if (capacidad != null && capacidad > 0) {
             criteriaList.add(Criteria.where("capacidad").gte(capacidad));
         }
-        
+
         if (precioMin != null) {
             criteriaList.add(Criteria.where("precioNoche").gte(precioMin));
         }
-        
+
         if (precioMax != null) {
             criteriaList.add(Criteria.where("precioNoche").lte(precioMax));
         }
-        
-        // Filtro por categoría de hotel (cantidad de estrellas)
+
         if (categoriaHotel != null) {
             criteriaList.add(Criteria.where("hotel.categoria").is(categoriaHotel));
         }
-        
-        // Filtro por amenities (la habitación debe tener TODAS las amenities solicitadas)
+
         if (amenities != null && !amenities.isEmpty()) {
             criteriaList.add(Criteria.where("amenities").all(amenities));
         }
-        
-        // Filtro geoespacial (búsqueda por proximidad)
+
         if (latitud != null && longitud != null && radioKm != null) {
-            // MongoDB GeoJSON usa [longitude, latitude] (x, y).
-            // nearSphere es compatible con el índice 2dsphere y, con coordenadas GeoJSON,
-            // $maxDistance se expresa en metros (a diferencia de near, que usa radianes).
             GeoJsonPoint geoPoint = new GeoJsonPoint(longitud, latitud);
             double maxDistanceMeters = radioKm * 1000.0;
 
             criteriaList.add(Criteria.where("hotel.ubicacion").nearSphere(geoPoint).maxDistance(maxDistanceMeters));
         }
-        
+
         if (!criteriaList.isEmpty()) {
             habitacionQuery.addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
         }
-        
-        // Obtener todas las habitaciones que cumplen criterios básicos
+
         List<Habitacion> todasHabitaciones = mongoTemplate.find(habitacionQuery, Habitacion.class);
-        
-        // Filtrar las que NO tienen reservas conflictivas
+
         List<Habitacion> disponibles = todasHabitaciones.stream()
                 .filter(hab -> esHabitacionDisponible(hab, checkIn, checkOut))
                 .collect(Collectors.toList());
-        
-        // Aplicar paginación
+
         int start = (int) pageable.getOffset();
         if (start >= disponibles.size()) {
             return new PageImpl<>(List.of(), pageable, disponibles.size());
         }
         int end = Math.min((start + pageable.getPageSize()), disponibles.size());
         List<Habitacion> paginadas = disponibles.subList(start, end);
-        
-        // Mapear a DTO
+
         List<HabitacionDisponibleDTO> dtos = paginadas.stream()
-                .map(this::toDisponibleDTO)
+                .map(habitacionMapper::toDisponible)
                 .collect(Collectors.toList());
-        
+
         log.info("Encontradas {} habitaciones disponibles", disponibles.size());
         return new PageImpl<>(dtos, pageable, disponibles.size());
     }
 
-    // ===== MÉTODOS PRIVADOS =====
+    // ===== MÉTODOS AUXILIARES PRIVADOS =====
 
-    private Habitacion mapFromHabitacion(HabitacionDTO dto) {
-        return Habitacion.builder()
-                .habitacionId(dto.getHabitacionId())
-                .precioNoche(dto.getPrecioNoche() != null ? dto.getPrecioNoche() : 0.0)
-                .capacidad(dto.getCapacidad())
-                .amenities(dto.getAmenities())
-                .idTipoHabitacion(dto.getTipoHabitacionId())
-                .tipoHabitacion(dto.getTipoHabitacion())
-                .hotel(mapFromDto(dto.getHotel()))
-                .build();
-    }
-
-    private Hotel mapFromDto(HotelDTO dto){
-        if(dto == null) {
-            return null;
-        }
-        return Hotel.builder()
-                .id(dto.getId())
-                .nombre(dto.getNombre())
-                .domicilio(dto.getDomicilio())
-                .categoria(dto.getCategoria())
-                .ubicacion(new GeoJsonPoint(dto.getLongitud(), dto.getLatitud()))  // GeoJSON: (longitude, latitude)
-                .build();
-    }
-
-    private Optional<Habitacion> findByHabitacionId(Integer habitacionId) {
-        Query query = new Query(Criteria.where("habitacionId").is(habitacionId));
-        Habitacion habitacion = mongoTemplate.findOne(query, Habitacion.class);
-        return Optional.ofNullable(habitacion);
+    private Habitacion buscarHabitacionOExcepcion(String id) {
+        return habitacionRepository.findById(id)
+                .orElseThrow(() -> {
+                    String msg = "Habitación no encontrada con ID: " + id;
+                    log.error(msg);
+                    return new EntityNotFoundException(msg);
+                });
     }
 
     private Habitacion updateByHabitacionId(Integer habitacionId, Habitacion nuevaHabitacion) {
@@ -226,17 +190,14 @@ public class HabitacionServiceImpl implements HabitacionService {
         mongoTemplate.updateMulti(query, update, Habitacion.class);
         log.info("Precio actualizado para tipo habitación ID: {}", tarifaDTO.getTipoHabitacionId());
     }
-    
+
     private boolean esHabitacionDisponible(Habitacion habitacion, Instant checkIn, Instant checkOut) {
-        // La reserva puede referenciar la habitación por su _id de MongoDB (flujo REST)
-        // o por su habitacionId numérico como String (eventos de cierre de hotel).
-        // Se consulta por ambos identificadores para detectar cualquier reserva conflictiva.
         Query reservaQuery = new Query();
         reservaQuery.addCriteria(
                 Criteria.where("idHabitacion").in(habitacion.getId(), String.valueOf(habitacion.getHabitacionId()))
                         .and("estadoReserva").in(
                                 EstadoReserva.RESERVADA,
-                                EstadoReserva.CONFIRMADA, 
+                                EstadoReserva.CONFIRMADA,
                                 EstadoReserva.EFECTUADA,
                                 EstadoReserva.BLOQUEADA,
                                 EstadoReserva.CERRADA)
@@ -248,30 +209,7 @@ public class HabitacionServiceImpl implements HabitacionService {
                                 )
                         )
         );
-        
+
         return !mongoTemplate.exists(reservaQuery, Reserva.class);
-    }
-    
-    private HabitacionDisponibleDTO toDisponibleDTO(Habitacion habitacion) {
-        var hotel = habitacion.getHotel();
-        var ubicacion = hotel != null ? hotel.getUbicacion() : null;
-        var hotelDTO = HotelSimpleDTO.builder()
-                .id(hotel != null ? hotel.getId() : null)
-                .nombre(hotel != null ? hotel.getNombre() : null)
-                .categoria(hotel != null ? hotel.getCategoria() : null)
-                .domicilio(hotel != null ? hotel.getDomicilio() : null)
-                .latitud(ubicacion != null ? ubicacion.getY() : null)
-                .longitud(ubicacion != null ? ubicacion.getX() : null)
-                .build();
-        
-        return HabitacionDisponibleDTO.builder()
-                .id(habitacion.getId())
-                .habitacionId(habitacion.getHabitacionId())
-                .capacidad(habitacion.getCapacidad())
-                .precioNoche(habitacion.getPrecioNoche() != null ? habitacion.getPrecioNoche() : 0.0)
-                .tipoHabitacion(habitacion.getTipoHabitacion())
-                .amenities(habitacion.getAmenities())
-                .hotel(hotelDTO)
-                .build();
     }
 }

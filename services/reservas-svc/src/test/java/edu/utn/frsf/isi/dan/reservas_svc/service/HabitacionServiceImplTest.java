@@ -2,7 +2,9 @@ package edu.utn.frsf.isi.dan.reservas_svc.service;
 
 import edu.utn.frsf.isi.dan.reservas_svc.TestDataFactory;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDisponibleDTO;
-import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
+import edu.utn.frsf.isi.dan.reservas_svc.exception.EntityNotFoundException;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.HabitacionMapperImpl;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.HotelMapperImpl;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.HabitacionRepository;
@@ -11,10 +13,10 @@ import edu.utn.frsf.isi.dan.shared.HabitacionEvent;
 import edu.utn.frsf.isi.dan.shared.HotelDTO;
 import edu.utn.frsf.isi.dan.shared.TarifaDTO;
 import edu.utn.frsf.isi.dan.shared.TipoEvento;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
@@ -39,8 +41,13 @@ class HabitacionServiceImplTest {
     private HabitacionRepository habitacionRepository;
     @Mock
     private MongoTemplate mongoTemplate;
-    @InjectMocks
     private HabitacionServiceImpl habitacionService;
+
+    @BeforeEach
+    void setUp() {
+        habitacionService = new HabitacionServiceImpl(
+                habitacionRepository, mongoTemplate, new HabitacionMapperImpl(new HotelMapperImpl()));
+    }
 
     @Test
     void handleEventCrearShouldSave() {
@@ -145,7 +152,7 @@ class HabitacionServiceImplTest {
         var page = habitacionService.buscarDisponibles(
                 Instant.now().plusSeconds(86400), Instant.now().plusSeconds(172800),
                 1, 50.0, 200.0, 4, List.of("WIFI"), null, null, null, PageRequest.of(0, 10));
-        assertThat(page.getContent()).hasSize(1).extracting(HabitacionDisponibleDTO::getId).contains("hab-1");
+        assertThat(page.getContent()).hasSize(1).extracting(HabitacionDisponibleDTO::id).contains("hab-1");
     }
 
     @Test
@@ -207,9 +214,9 @@ class HabitacionServiceImplTest {
                 null, null, null, null, null, null, null, null, PageRequest.of(0, 10));
 
         var dto = page.getContent().get(0);
-        assertThat(dto.getAmenities()).containsExactly("WIFI");
-        assertThat(dto.getHotel().getLatitud()).isEqualTo(-32.95);
-        assertThat(dto.getHotel().getLongitud()).isEqualTo(-60.66);
+        assertThat(dto.amenities()).containsExactly("WIFI");
+        assertThat(dto.hotel().latitud()).isEqualTo(-32.95);
+        assertThat(dto.hotel().longitud()).isEqualTo(-60.66);
     }
 
     @Test
@@ -278,17 +285,32 @@ class HabitacionServiceImplTest {
     }
 
     @Test
-    void simpleCrudMethodsShouldDelegate() {
+    void findAllShouldReturnDTOs() {
         var hab = TestDataFactory.habitacion();
         when(habitacionRepository.findAll()).thenReturn(List.of(hab));
-        when(habitacionRepository.findById("hab-1")).thenReturn(Optional.of(hab));
-        when(habitacionRepository.save(hab)).thenReturn(hab);
 
-        assertThat(habitacionService.findAll()).hasSize(1);
-        assertThat(habitacionService.findById("hab-1")).contains(hab);
-        assertThat(habitacionService.save(hab)).isEqualTo(hab);
-        habitacionService.deleteById("hab-1");
-        verify(habitacionRepository).deleteById("hab-1");
+        var dtos = habitacionService.findAll();
+
+        assertThat(dtos).hasSize(1);
+        assertThat(dtos.get(0).id()).isEqualTo("hab-1");
+        assertThat(dtos.get(0).hotel().id()).isEqualTo(1);
+    }
+
+    @Test
+    void buscarPorIdShouldReturnDTO() {
+        var hab = TestDataFactory.habitacion();
+        when(habitacionRepository.findById("hab-1")).thenReturn(Optional.of(hab));
+
+        var dto = habitacionService.buscarPorId("hab-1");
+
+        assertThat(dto.id()).isEqualTo("hab-1");
+        assertThat(dto.hotel().nombre()).isEqualTo("Hotel Dan");
+    }
+
+    @Test
+    void buscarPorIdShouldThrowWhenMissing() {
+        when(habitacionRepository.findById("x")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> habitacionService.buscarPorId("x")).isInstanceOf(EntityNotFoundException.class);
     }
 
     private static Object findInCriteria(Query query, String field) {
