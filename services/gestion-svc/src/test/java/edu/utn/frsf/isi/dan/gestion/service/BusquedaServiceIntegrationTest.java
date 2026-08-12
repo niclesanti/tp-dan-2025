@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,7 +70,6 @@ class BusquedaServiceIntegrationTest {
         tipoHabitacionRepository.deleteAll();
 
         var tipo = TipoHabitacion.builder()
-                .id(100)
                 .nombre("Suite")
                 .descripcion("Suite premium")
                 .capacidad(3)

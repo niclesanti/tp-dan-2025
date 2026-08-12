@@ -52,7 +52,7 @@
           "request": {
             "method": "POST",
             "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"id\": 10,\n  \"nombre\": \"SUITE\",\n  \"descripcion\": \"Suite de lujo\",\n  \"capacidad\": 2\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"SUITE\",\n  \"descripcion\": \"Suite de lujo\",\n  \"capacidad\": 2\n}" },
             "url": { "raw": "http://localhost:8080/tipos-habitacion", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion"] }
           }
         },
@@ -69,7 +69,7 @@
           "request": {
             "method": "PUT",
             "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"id\": 10,\n  \"nombre\": \"SUITE ACTUALIZADA\",\n  \"descripcion\": \"Suite de lujo renovada\",\n  \"capacidad\": 3\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"SUITE ACTUALIZADA\",\n  \"descripcion\": \"Suite de lujo renovada\",\n  \"capacidad\": 3\n}" },
             "url": { "raw": "http://localhost:8080/tipos-habitacion/10", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion", "10"] }
           }
         },

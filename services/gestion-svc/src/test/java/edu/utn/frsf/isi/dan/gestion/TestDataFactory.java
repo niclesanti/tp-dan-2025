@@ -8,7 +8,9 @@ import edu.utn.frsf.isi.dan.gestion.dto.HotelDTOResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelDTOUpdate;
 import edu.utn.frsf.isi.dan.gestion.dto.TarifaDTORequest;
 import edu.utn.frsf.isi.dan.gestion.dto.TarifaDTOResponse;
+import edu.utn.frsf.isi.dan.gestion.dto.TipoHabitacionDTORequest;
 import edu.utn.frsf.isi.dan.gestion.dto.TipoHabitacionDTOResponse;
+import edu.utn.frsf.isi.dan.gestion.dto.TipoHabitacionDTOUpdate;
 import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
 import edu.utn.frsf.isi.dan.gestion.model.Habitacion;
@@ -109,6 +111,14 @@ public final class TestDataFactory {
 
     public static TipoHabitacionDTOResponse tipoHabitacionDTOResponse() {
         return new TipoHabitacionDTOResponse(1, "Suite", "Suite premium", 2);
+    }
+
+    public static TipoHabitacionDTORequest tipoHabitacionDTORequest() {
+        return new TipoHabitacionDTORequest("Suite", "Suite premium", 2);
+    }
+
+    public static TipoHabitacionDTOUpdate tipoHabitacionDTOUpdate() {
+        return new TipoHabitacionDTOUpdate("Suite Premium", "Suite de lujo", 3);
     }
 }
 
