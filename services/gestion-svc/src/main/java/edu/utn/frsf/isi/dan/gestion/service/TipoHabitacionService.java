@@ -1,31 +1,32 @@
 package edu.utn.frsf.isi.dan.gestion.service;
 
-import edu.utn.frsf.isi.dan.gestion.dao.TipoHabitacionRepository;
-import edu.utn.frsf.isi.dan.gestion.model.TipoHabitacion;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import edu.utn.frsf.isi.dan.gestion.dto.*;
 import java.util.List;
-import java.util.Optional;
 
-@Service
-public class TipoHabitacionService {
-    @Autowired
-    private TipoHabitacionRepository tipoHabitacionRepository;
+public interface TipoHabitacionService {
 
-    public TipoHabitacion save(TipoHabitacion tipoHabitacion) {
-        return tipoHabitacionRepository.save(tipoHabitacion);
-    }
+    /**
+     * Crea un nuevo tipo de habitación.
+     */
+    TipoHabitacionDTOResponse crearTipoHabitacion(TipoHabitacionDTORequest request);
 
-    public void deleteById(Integer id) {
-        tipoHabitacionRepository.deleteById(id);
-    }
+    /**
+     * Busca un tipo de habitación por ID.
+     */
+    TipoHabitacionDTOResponse buscarTipoHabitacionPorId(Integer id);
 
-    public Optional<TipoHabitacion> findById(Integer id) {
-        return tipoHabitacionRepository.findById(id);
-    }
+    /**
+     * Busca todos los tipos de habitación.
+     */
+    List<TipoHabitacionDTOResponse> buscarTiposHabitacion();
 
-    public List<TipoHabitacion> findAll() {
-        return tipoHabitacionRepository.findAll();
-    }
+    /**
+     * Actualiza los datos de un tipo de habitación existente.
+     */
+    TipoHabitacionDTOResponse actualizarTipoHabitacion(Integer id, TipoHabitacionDTOUpdate request);
+
+    /**
+     * Elimina un tipo de habitación por ID.
+     */
+    void eliminarTipoHabitacion(Integer id);
 }

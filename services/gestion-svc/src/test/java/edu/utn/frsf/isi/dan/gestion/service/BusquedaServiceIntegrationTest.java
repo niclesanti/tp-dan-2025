@@ -23,13 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
+        "server.port=8080",
         "spring.datasource.url=jdbc:h2:mem:busqueda_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;INIT=CREATE SCHEMA IF NOT EXISTS tp_dan",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
@@ -71,7 +71,6 @@ class BusquedaServiceIntegrationTest {
         tipoHabitacionRepository.deleteAll();
 
         var tipo = TipoHabitacion.builder()
-                .id(100)
                 .nombre("Suite")
                 .descripcion("Suite premium")
                 .capacidad(3)

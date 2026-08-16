@@ -220,7 +220,6 @@ class UserServiceImplTest {
         void debeLanzarExcepcionSiBancoNoExiste() {
             PropietarioDTORequest request = TestDataFactory.propietarioDTORequest();
 
-            when(propietarioMapper.toEntity(request)).thenReturn(TestDataFactory.propietario());
             when(bancoRepository.findById(request.cuentaBancaria().bancoId())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> userService.createUsuarioPropietario(request))

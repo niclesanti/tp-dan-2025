@@ -7,6 +7,10 @@ export const buscarHabitacionesSchema = z.object({
   precioMin: z.number().min(0).optional().nullable(),
   precioMax: z.number().min(0).optional().nullable(),
   categoriaHotel: z.number().int().min(1).max(5).optional().nullable(),
+  amenities: z.array(z.string()).optional(),
+  latitud: z.number().min(-90).max(90).optional().nullable(),
+  longitud: z.number().min(-180).max(180).optional().nullable(),
+  radioKm: z.number().min(0.1).optional().nullable(),
 });
 
 export type BuscarHabitacionesFormValues = z.infer<typeof buscarHabitacionesSchema>;

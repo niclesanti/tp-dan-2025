@@ -36,8 +36,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor  // Genera constructor con todos los campos final para inyección de dependencias
@@ -94,9 +92,7 @@ public class UserServiceImpl implements UserService {
         tarjetaCredito.setBanco(banco);
         
         // Inicializar la lista de tarjetas si es null y agregar la tarjeta
-        if (huesped.getTarjetaCredito() == null) {
-            huesped.setTarjetaCredito(new ArrayList<>());
-        }
+        huesped.inicializarListaTarjetaCredito();
         huesped.getTarjetaCredito().add(tarjetaCredito);
 
         // Guardar el huésped (la tarjeta se guarda automáticamente por cascada)
@@ -176,7 +172,6 @@ public class UserServiceImpl implements UserService {
 
     /**
     * Crea un nuevo usuario de tipo propietario.
-    * La cuenta bancaria e idHotel son opcionales al momento de la creación.
     * Si se proporciona cuenta bancaria, se valida que el banco exista.
     *
     * @param propietarioRequest DTO con los datos del nuevo propietario
@@ -188,8 +183,6 @@ public class UserServiceImpl implements UserService {
     public PropietarioDTOResponse createUsuarioPropietario(PropietarioDTORequest propietarioRequest) {
 
         log.info("Creando usuario propietario con datos: {}", propietarioRequest);
-
-        Propietario propietario = propietarioMapper.toEntity(propietarioRequest);
         
         Banco banco = bancoRepository.findById(propietarioRequest.cuentaBancaria().bancoId())
                     .orElseThrow(() -> {
@@ -198,11 +191,11 @@ public class UserServiceImpl implements UserService {
                         return new EntityNotFoundException(errorMessage);
                     });
 
+        Propietario propietario = propietarioMapper.toEntity(propietarioRequest);
         CuentaBancaria cuentaBancaria = cuentaBancariaMapper.toEntity(propietarioRequest.cuentaBancaria());
         cuentaBancaria.setBanco(banco);
         cuentaBancaria.setPropietario(propietario);
         propietario.setCuentaBancaria(cuentaBancariaRepository.save(cuentaBancaria));
-        
 
         Propietario propietarioGuardado = propietarioRepository.save(propietario);
 

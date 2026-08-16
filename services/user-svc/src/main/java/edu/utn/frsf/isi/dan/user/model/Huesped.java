@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,5 +20,11 @@ public class Huesped extends Usuario {
     
     @OneToMany(mappedBy = "huesped", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TarjetaCredito> tarjetaCredito;
+
+    public void inicializarListaTarjetaCredito() {
+        if (this.getTarjetaCredito() == null) {
+            this.setTarjetaCredito(new ArrayList<>());
+        }
+    }
 
 }

@@ -23,9 +23,17 @@ CREATE TABLE IF NOT EXISTS tp_dan.hotel (
     fecha_cierre date
 );
 
+-- Secuencia para tipo_habitacion
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'tipo_habitacion_id_seq') THEN
+        CREATE SEQUENCE tp_dan.tipo_habitacion_id_seq START WITH 10;
+    END IF;
+END$$;
+
 -- Tabla tipo_habitacion
 CREATE TABLE IF NOT EXISTS tp_dan.tipo_habitacion (
-    id integer PRIMARY KEY,
+    id integer PRIMARY KEY DEFAULT nextval('tp_dan.tipo_habitacion_id_seq'),
     nombre varchar(50) NOT NULL,
     descripcion varchar(255) NOT NULL,
     capacidad integer NOT NULL
@@ -42,6 +50,9 @@ INSERT INTO tp_dan.tipo_habitacion (id, nombre, descripcion, capacidad) VALUES
     (8, 'TRIPLE SUPERIOR', 'Dos camas individuales', 3),
     (9, 'CUADRUPLE SUPERIOR', 'Dos camas individuales', 4)
 ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE tp_dan.tipo_habitacion ALTER COLUMN id SET DEFAULT nextval('tp_dan.tipo_habitacion_id_seq');
+SELECT setval('tp_dan.tipo_habitacion_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM tp_dan.tipo_habitacion), 9), 9), true);
 
 -- Tabla tarifa
 CREATE TABLE IF NOT EXISTS tp_dan.tarifa (

@@ -1,14 +1,17 @@
 package edu.utn.frsf.isi.dan.reservas_svc.controller;
 
-import edu.utn.frsf.isi.dan.reservas_svc.dto.*;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoDTORequest;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTORequest;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTOResponse;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.ReviewDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
 import edu.utn.frsf.isi.dan.reservas_svc.service.ReservaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,9 +23,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/reservas")
 @RequiredArgsConstructor
-@Slf4j
 public class ReservaController {
-    
+
     private final ReservaService reservaService;
 
     @Operation(summary = "Crear reserva",
@@ -34,8 +36,10 @@ public class ReservaController {
                    @ApiResponse(responseCode = "404", description = "Habitación no encontrada"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PostMapping
-    public ResponseEntity<ReservaDTOResponse> crear(@Valid @RequestBody ReservaDTORequest request) {
-        log.info("POST /reservas - Crear nueva reserva");
+    public ResponseEntity<ReservaDTOResponse> crear(
+            @Valid
+            @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
+            @RequestBody ReservaDTORequest request) {
         var reserva = reservaService.crearReserva(request);
         return new ResponseEntity<>(reserva, HttpStatus.CREATED);
     }
@@ -47,8 +51,9 @@ public class ReservaController {
                    @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @GetMapping("/{id}")
-    public ResponseEntity<ReservaDTOResponse> buscarPorId(@PathVariable String id) {
-        log.info("GET /reservas/{} - Buscar por ID", id);
+    public ResponseEntity<ReservaDTOResponse> buscarPorId(
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id) {
         var reserva = reservaService.buscarReservaPorId(id);
         return ResponseEntity.ok(reserva);
     }
@@ -61,9 +66,9 @@ public class ReservaController {
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @GetMapping("/huesped/dni/{dni}")
     public ResponseEntity<Page<ReservaDTOResponse>> buscarPorHuesped(
-            @PathVariable String dni,
+            @PathVariable
+            @NotNull(message = "El DNI no puede ser nulo") String dni,
             @ParameterObject Pageable pageable) {
-        log.info("GET /reservas/huesped/dni/{} - Buscar por DNI de huésped", dni);
         var reservas = reservaService.buscarReservasPorHuesped(dni, pageable);
         return ResponseEntity.ok(reservas);
     }
@@ -80,9 +85,9 @@ public class ReservaController {
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PatchMapping("/{id}/estado")
     public ResponseEntity<ReservaDTOResponse> actualizarEstado(
-            @PathVariable String id,
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id,
             @RequestParam EstadoReserva estado) {
-        log.info("PATCH /reservas/{}/estado - Actualizar estado a {}", id, estado);
         var reserva = reservaService.actualizarEstadoReserva(id, estado);
         return ResponseEntity.ok(reserva);
     }
@@ -96,8 +101,9 @@ public class ReservaController {
                    @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PostMapping("/{id}/check-in")
-    public ResponseEntity<ReservaDTOResponse> realizarCheckIn(@PathVariable String id) {
-        log.info("POST /reservas/{}/check-in - Realizar check-in (cliente ingresa al hotel)", id);
+    public ResponseEntity<ReservaDTOResponse> realizarCheckIn(
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id) {
         var reserva = reservaService.realizarCheckIn(id);
         return ResponseEntity.ok(reserva);
     }
@@ -113,8 +119,9 @@ public class ReservaController {
                    @ApiResponse(responseCode = "409", description = "Conflicto de estado o fecha (check-out antes de la fecha programada)"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PostMapping("/{id}/check-out")
-    public ResponseEntity<ReservaDTOResponse> realizarCheckOut(@PathVariable String id) {
-        log.info("POST /reservas/{}/check-out - Realizar check-out (cliente sale del hotel)", id);
+    public ResponseEntity<ReservaDTOResponse> realizarCheckOut(
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id) {
         var reserva = reservaService.realizarCheckOut(id);
         return ResponseEntity.ok(reserva);
     }
@@ -129,9 +136,11 @@ public class ReservaController {
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PostMapping("/{id}/pagos")
     public ResponseEntity<ReservaDTOResponse> agregarPago(
-            @PathVariable String id,
-            @Valid @RequestBody PagoDTORequest pagoRequest) {
-        log.info("POST /reservas/{}/pagos - Agregar pago", id);
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id,
+            @Valid
+            @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
+            @RequestBody PagoDTORequest pagoRequest) {
         var reserva = reservaService.agregarPago(id, pagoRequest);
         return ResponseEntity.ok(reserva);
     }
@@ -146,9 +155,11 @@ public class ReservaController {
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PostMapping("/{id}/reviews/cliente")
     public ResponseEntity<ReservaDTOResponse> agregarReviewCliente(
-            @PathVariable String id,
-            @Valid @RequestBody ReviewDTORequest reviewRequest) {
-        log.info("POST /reservas/{}/reviews/cliente - Agregar review de cliente", id);
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id,
+            @Valid
+            @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
+            @RequestBody ReviewDTORequest reviewRequest) {
         var reserva = reservaService.agregarReview(id, reviewRequest, true);
         return ResponseEntity.ok(reserva);
     }
@@ -163,9 +174,11 @@ public class ReservaController {
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @PostMapping("/{id}/reviews/host")
     public ResponseEntity<ReservaDTOResponse> agregarReviewHost(
-            @PathVariable String id,
-            @Valid @RequestBody ReviewDTORequest reviewRequest) {
-        log.info("POST /reservas/{}/reviews/host - Agregar review de host", id);
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id,
+            @Valid
+            @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
+            @RequestBody ReviewDTORequest reviewRequest) {
         var reserva = reservaService.agregarReview(id, reviewRequest, false);
         return ResponseEntity.ok(reserva);
     }
@@ -179,9 +192,10 @@ public class ReservaController {
                    @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelar(@PathVariable String id) {
-        log.info("DELETE /reservas/{} - Cancelar reserva", id);
+    public ResponseEntity<Void> cancelar(
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id) {
         reservaService.cancelarReserva(id);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

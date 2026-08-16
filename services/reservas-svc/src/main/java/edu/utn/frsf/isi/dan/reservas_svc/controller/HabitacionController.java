@@ -1,13 +1,13 @@
 package edu.utn.frsf.isi.dan.reservas_svc.controller;
 
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDisponibleDTO;
-import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDTOResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.service.HabitacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +22,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/habitaciones")
 @RequiredArgsConstructor
-@Slf4j
 public class HabitacionController {
-    
+
     private final HabitacionService habitacionService;
 
     @Operation(summary = "Listar todas las habitaciones",
@@ -33,9 +32,8 @@ public class HabitacionController {
                    @ApiResponse(responseCode = "200", description = "Lista de habitaciones obtenida exitosamente"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @GetMapping
-    public List<Habitacion> getAll() {
-        log.info("GET /habitaciones - Listar todas");
-        return habitacionService.findAll();
+    public ResponseEntity<List<HabitacionDTOResponse>> getAll() {
+        return ResponseEntity.ok(habitacionService.findAll());
     }
 
     @Operation(summary = "Buscar habitación por ID",
@@ -45,11 +43,10 @@ public class HabitacionController {
                    @ApiResponse(responseCode = "404", description = "Habitación no encontrada"),
                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")})
     @GetMapping("/{id}")
-    public ResponseEntity<Habitacion> getById(@PathVariable String id) {
-        log.info("GET /habitaciones/{} - Buscar por ID", id);
-        return habitacionService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<HabitacionDTOResponse> getById(
+            @PathVariable
+            @NotNull(message = "El ID no puede ser nulo") String id) {
+        return ResponseEntity.ok(habitacionService.buscarPorId(id));
     }
 
     @Operation(summary = "Buscar habitaciones disponibles",
@@ -75,11 +72,8 @@ public class HabitacionController {
             @RequestParam(required = false) Double longitud,
             @RequestParam(required = false) Double radioKm,
             @ParameterObject Pageable pageable) {
-        log.info("GET /habitaciones/disponibles - Buscar disponibles del {} al {}", checkIn, checkOut);
-        log.info("  Filtros opcionales: capacidad={}, precioMin={}, precioMax={}, categoriaHotel={}, amenities={}, latitud={}, longitud={}, radioKm={}", 
-                 capacidad, precioMin, precioMax, categoriaHotel, amenities, latitud, longitud, radioKm);
         var habitaciones = habitacionService.buscarDisponibles(
-                checkIn, checkOut, capacidad, precioMin, precioMax, 
+                checkIn, checkOut, capacidad, precioMin, precioMax,
                 categoriaHotel, amenities, latitud, longitud, radioKm, pageable);
         return ResponseEntity.ok(habitaciones);
     }
