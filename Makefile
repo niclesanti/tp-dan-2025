@@ -61,8 +61,10 @@ dev-up:
 	@echo "$(GREEN)🚀 Levantando servicios en modo DESARROLLO...$(NC)"
 	docker compose up -d --build
 	@echo "$(GREEN)✅ Servicios levantados$(NC)"
-	@echo "$(BLUE)📊 API REST: http://localhost:8081$(NC)"
-	@echo "$(BLUE)📖 Swagger: http://localhost:8081/swagger-ui$(NC)"
+	@echo "$(BLUE)📊 API REST: http://localhost:8080$(NC)"
+	@echo "$(BLUE)📖 Swagger (users): http://localhost:8080/users/swagger-ui/index.html$(NC)"
+	@echo "$(BLUE)📖 Swagger (reservas): http://localhost:8080/reservas/swagger-ui/index.html$(NC)"
+	@echo "$(BLUE)📖 Swagger (gestion): http://localhost:8080/gestion/swagger-ui/index.html$(NC)"
 	@echo "$(BLUE)🗄️  PHPMyAdmin: http://localhost:6080$(NC)"
 
 ## dev-down: Detener servicios de desarrollo
@@ -183,7 +185,7 @@ health:
 	@echo "$(GREEN)  Health Check$(NC)"
 	@echo "$(BLUE)═══════════════════════════════════════════════════════$(NC)"
 	@echo "$(YELLOW)user-svc:$(NC)"
-	@curl -sf http://localhost:8081/actuator/health | jq . || echo "$(RED)❌ No responde$(NC)"
+	@curl -sf http://localhost:8080/users/actuator/health | jq . || echo "$(RED)❌ No responde$(NC)"
 	@echo ""
 	@echo "$(YELLOW)MySQL:$(NC)"
 	@docker compose exec mysql mysqladmin ping -h localhost -u root -prootpwd || echo "$(RED)❌ No responde$(NC)"

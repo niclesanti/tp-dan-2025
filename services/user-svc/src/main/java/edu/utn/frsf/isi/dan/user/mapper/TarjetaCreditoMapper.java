@@ -51,7 +51,7 @@ public interface TarjetaCreditoMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "huesped", ignore = true)
     @Mapping(target = "banco", ignore = true)
-    void updateEntity(TarjetaCreditoDTOUpdate dto, @MappingTarget TarjetaCredito tarjeta); // ✅ agregado
+    void updateEntity(TarjetaCreditoDTOUpdate dto, @MappingTarget TarjetaCredito tarjeta);
 
     
 }

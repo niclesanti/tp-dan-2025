@@ -16,7 +16,7 @@ import java.util.Map;
 @RequestMapping("/info")
 public class InfoController {
 
-    @Value("${HOSTNAME:${spring.application.name}}")
+    @Value("${spring.application.name}:${server.port}:${HOSTNAME:${spring.application.name}}")
     private String serverName;
 
     @GetMapping

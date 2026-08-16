@@ -1,12 +1,18 @@
 package edu.utn.frsf.isi.dan.reservas_svc;
 
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDisponibleDTO;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.HabitacionDTOResponse;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.HotelDTOResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HotelSimpleDTO;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.HuespedDTORequest;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.HuespedDTOResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoDTORequest;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoDTOResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTOResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReviewDTORequest;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.ReviewDTOResponse;
+import edu.utn.frsf.isi.dan.reservas_svc.dto.TarifaDTOResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Hotel;
@@ -32,6 +38,10 @@ public final class TestDataFactory {
 
     public static HuespedDTORequest huespedDTORequest() {
         return new HuespedDTORequest("Juan Perez", "juan@email.com", "12345678");
+    }
+
+    public static HuespedDTOResponse huespedDTOResponse() {
+        return new HuespedDTOResponse("12345678", "Juan Perez", "juan@email.com");
     }
 
     public static Hotel hotel() {
@@ -85,15 +95,20 @@ public final class TestDataFactory {
     }
 
     public static ReservaDTOResponse reservaDTOResponse() {
-        return ReservaDTOResponse.builder()
-                .id("r1")
-                .idHabitacion("hab-1")
-                .hotelId(1)
-                .checkIn(Instant.now().plusSeconds(86400))
-                .checkOut(Instant.now().plusSeconds(172800))
-                .huesped(huesped())
-                .estadoReserva(EstadoReserva.RESERVADA)
-                .build();
+        return new ReservaDTOResponse(
+                "r1",
+                "hab-1",
+                1,
+                null,
+                Instant.now().plusSeconds(86400),
+                Instant.now().plusSeconds(172800),
+                null,
+                null,
+                huespedDTOResponse(),
+                null,
+                null,
+                null,
+                EstadoReserva.RESERVADA);
     }
 
     public static Pago pago() {
@@ -106,19 +121,44 @@ public final class TestDataFactory {
                 .build();
     }
 
+    public static PagoDTOResponse pagoDTOResponse() {
+        return new PagoDTOResponse("CARD", "tx-1", new TarifaDTOResponse(50.0, "ARS"), "APPROVED", "1234567812345678");
+    }
+
     public static Review review() {
         return Review.builder().rating(4.0).comment("Muy bien").createdAt(Instant.now().toString()).build();
     }
 
+    public static ReviewDTOResponse reviewDTOResponse() {
+        return new ReviewDTOResponse(4.0, "Muy bien", Instant.now().toString());
+    }
+
+    public static HabitacionDTOResponse habitacionDTOResponse() {
+        return new HabitacionDTOResponse(
+                "hab-1",
+                101,
+                2,
+                100.0,
+                List.of("WIFI"),
+                null,
+                hotelDTOResponse(),
+                1,
+                "Suite");
+    }
+
+    public static HotelDTOResponse hotelDTOResponse() {
+        return new HotelDTOResponse(1, "Hotel Dan", 4, "San Martin 123", new GeoJsonPoint(-60.66, -32.95));
+    }
+
     public static HabitacionDisponibleDTO disponibleDTO() {
-        return HabitacionDisponibleDTO.builder()
-                .id("hab-1")
-                .habitacionId(101)
-                .capacidad(2)
-                .precioNoche(100.0)
-                .tipoHabitacion("Suite")
-                .hotel(HotelSimpleDTO.builder().id(1).nombre("Hotel Dan").categoria(4).domicilio("San Martin 123").build())
-                .build();
+        return new HabitacionDisponibleDTO(
+                "hab-1",
+                101,
+                2,
+                100.0,
+                "Suite",
+                List.of("WIFI"),
+                new HotelSimpleDTO(1, "Hotel Dan", 4, "San Martin 123", -32.95, -60.66));
     }
 }
 

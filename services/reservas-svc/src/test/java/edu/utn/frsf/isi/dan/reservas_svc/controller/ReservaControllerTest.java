@@ -56,6 +56,14 @@ class ReservaControllerTest {
     }
 
     @Test
+    void createShouldReturn400WhenBodyIsMalformed() throws Exception {
+        mockMvc.perform(post("/reservas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idHabitacion\": }"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void getByIdShouldReturn404() throws Exception {
         when(reservaService.buscarReservaPorId("x")).thenThrow(new EntityNotFoundException("x"));
         mockMvc.perform(get("/reservas/x")).andExpect(status().isNotFound());

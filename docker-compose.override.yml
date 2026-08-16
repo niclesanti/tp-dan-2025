@@ -74,8 +74,6 @@ services:
 
   # ── User Service (Development) ──────────────────────────────────
   user-svc:
-    ports:
-      - "8081:8080"  # API REST: http://localhost:8081
     environment:
       SPRING_PROFILES_ACTIVE: dev,eureka
       # Habilitar debugging remoto
@@ -94,8 +92,6 @@ services:
 
   # ── Gestion Service (Development) ──────────────────────────────
   gestion-svc:
-    ports:
-      - "8083:8080"  # API REST: http://localhost:8083
     environment:
       SPRING_PROFILES_ACTIVE: dev,eureka
       # Habilitar debugging remoto
@@ -131,8 +127,6 @@ services:
 
   # ── Reservas Service (Development) ─────────────────────────────
   reservas-svc:
-    ports:
-      - "8082:8080"  # API REST: http://localhost:8082
     environment:
       SPRING_PROFILES_ACTIVE: dev,eureka
       # Habilitar debugging remoto

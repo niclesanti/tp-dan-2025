@@ -91,6 +91,8 @@ export interface HotelSimpleDTO {
   nombre: string;
   categoria: number;
   domicilio: string;
+  latitud?: number | null;
+  longitud?: number | null;
 }
 
 export interface HabitacionDisponibleDTO {
@@ -99,6 +101,7 @@ export interface HabitacionDisponibleDTO {
   capacidad: number;
   precioNoche: number;
   tipoHabitacion: string;
+  amenities?: string[];
   hotel: HotelSimpleDTO;
 }
 

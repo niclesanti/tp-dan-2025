@@ -69,7 +69,6 @@ public class BancoServiceImpl implements BancoService {
                     return new EntityNotFoundException(errorMessage);
                 });
 
-        // Usamos el mapper en lugar de setters manuales
         bancoMapper.updateEntity(bancoUpdate, banco);
 
         Banco bancoActualizado = bancoRepository.save(banco);

@@ -3,16 +3,19 @@ package edu.utn.frsf.isi.dan.reservas_svc.service;
 import edu.utn.frsf.isi.dan.reservas_svc.TestDataFactory;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaDTORequest;
 import edu.utn.frsf.isi.dan.reservas_svc.exception.EntityNotFoundException;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.PagoMapperImpl;
 import edu.utn.frsf.isi.dan.reservas_svc.mapper.ReservaMapper;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.ReviewMapperImpl;
+import edu.utn.frsf.isi.dan.reservas_svc.mapper.TarifaMapperImpl;
 import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.HabitacionRepository;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.ReservaRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
@@ -42,8 +45,14 @@ class ReservaServiceImplTest {
     private ReservaMapper reservaMapper;
     @Mock
     private MongoTemplate mongoTemplate;
-    @InjectMocks
     private ReservaServiceImpl reservaService;
+
+    @BeforeEach
+    void setUp() {
+        reservaService = new ReservaServiceImpl(
+                reservaRepository, habitacionRepository, reservaMapper, mongoTemplate,
+                new PagoMapperImpl(new TarifaMapperImpl()), new ReviewMapperImpl());
+    }
 
     @Test
     void crearReservaShouldFailWhenCheckoutIsBeforeCheckin() {
@@ -89,7 +98,7 @@ class ReservaServiceImplTest {
 
         var response = reservaService.crearReserva(req);
 
-        assertThat(response.getId()).isEqualTo("r1");
+        assertThat(response.id()).isEqualTo("r1");
         verify(habitacionRepository).save(any(Habitacion.class));
     }
 
@@ -649,7 +658,7 @@ class ReservaServiceImplTest {
         var reserva = TestDataFactory.reserva();
         when(reservaRepository.findById("r1")).thenReturn(Optional.of(reserva));
         when(reservaMapper.toResponse(reserva)).thenReturn(TestDataFactory.reservaDTOResponse());
-        assertThat(reservaService.buscarReservaPorId("r1").getId()).isEqualTo("r1");
+        assertThat(reservaService.buscarReservaPorId("r1").id()).isEqualTo("r1");
     }
 }
 
