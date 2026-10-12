@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Banco Controller", description = "Operaciones para la gestión de bancos y tarjetas de crédito")
 @RestController
+@RequestMapping("/bancos")
 @RequiredArgsConstructor
 public class BancoController {
 
@@ -35,7 +36,7 @@ public class BancoController {
                     @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
-    @PostMapping("/bancos")
+    @PostMapping
     public ResponseEntity<BancoDTOResponse> crearBanco(
         @Valid
         @NotNull(message = "El cuerpo de la solicitud no puede ser nulo")
@@ -52,7 +53,7 @@ public class BancoController {
                     @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
-    @PutMapping("/bancos/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<BancoDTOResponse> actualizarBanco(
         @PathVariable
         @NotNull(message = "El ID no puede ser nulo") Integer id,
@@ -70,7 +71,7 @@ public class BancoController {
                     @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
-    @DeleteMapping("/bancos/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarBanco(
         @PathVariable
         @NotNull(message = "El ID no puede ser nulo") Integer id) {
@@ -86,7 +87,7 @@ public class BancoController {
                     @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
-    @GetMapping("/bancos/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<BancoDTOResponse> buscarBancoPorId(
         @PathVariable
         @NotNull(message = "El ID no puede ser nulo") Integer id) {
@@ -100,7 +101,7 @@ public class BancoController {
                     @ApiResponse(responseCode = "200", description = "Lista de bancos"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
-    @GetMapping("/bancos")
+    @GetMapping
     public ResponseEntity<List<BancoDTOResponse>> listarBancos() {
 
         return ResponseEntity.ok(bancoService.listarBancos());

@@ -399,6 +399,9 @@ services:
     restart: unless-stopped
     networks:
       - tp-dan-network
+    depends_on:
+      dan-gateway:
+        condition: service_started
 
   # ── Grafana (Visualization) ───────────────────────────────────
   grafana:
